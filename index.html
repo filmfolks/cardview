@@ -121,6 +121,7 @@
         gap: 0;
         padding: 0;
         margin: 0;
+        padding-top: 50px; /* Extra space for top-controls to avoid overlap */
       }
       .card {
         width: 100vw;
@@ -129,6 +130,7 @@
         box-shadow: none;
         margin: 0;
         padding: 16px;
+        padding-top: 20px; /* Extra padding inside card to push content below buttons */
       }
       h1 {
         display: none; /* Hide header on mobile */
@@ -138,6 +140,9 @@
       }
       .card-buttons {
         display: flex; /* Show buttons at bottom of each card */
+      }
+      .top-controls {
+        top: 5px; /* Slightly higher to feel "above" the card */
       }
       html, body {
         overflow-y: scroll; /* Smooth vertical scrolling */
@@ -184,9 +189,6 @@
     let isDarkMode = false;
 
     function createCard() {
-      // Lock previous cards
-      document.querySelectorAll(".card textarea").forEach(el => el.disabled = true);
-
       const card = document.createElement("div");
       card.classList.add("card");
 
@@ -224,7 +226,8 @@
       card.appendChild(cardButtons);
       cardsContainer.appendChild(card);
 
-      card.scrollIntoView({ behavior: "smooth" });
+      // Scroll to the new card (shows only it on mobile)
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
       sceneHeading.focus();
     }
 
