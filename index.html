@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Screenplay Card View</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fafafa;
+      color: #000;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark-mode {
+      background: #121212;
+      color: #f0f0f0;
+    }
+
+    #cards-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 1200px;
+      margin: 60px auto;
+      gap: 20px;
+      padding: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 300px;
+      position: relative; /* For buttons inside */
+    }
+    body.dark-mode .card {
+      background: #1e1e1e;
+      border-color: #555;
+      box-shadow: 0 2px 5px rgba(255,255,255,0.05);
+    }
+
+    .scene-heading,
+    .description {
+      border: none;
+      outline: none;
+      background: transparent;
+      color: inherit;
+      resize: none;
+      width: 100%;
+    }
+    .scene-heading {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .description {
+      font-size: 1rem;
+      flex-grow: 1;
+    }
+
+    .top-controls {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+    }
+    .bottom-controls {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    button {
+      font-size: 1.3rem;
+      padding: 8px 12px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    body.dark-mode button {
+      background-color: #0056b3;
+    }
+    body.dark-mode button:hover {
+      background-color: #007bff;
+    }
+
+    /* Card-specific buttons (add and fullscreen) */
+    .card-buttons {
+      display: none; /* Hidden on desktop */
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+    }
+
+    /* 📱 Mobile: Vertical full-screen cards */
+    @media (max-width: 600px) {
+      #cards-container {
+        gap: 0;
+        padding: 0;
+        margin: 0;
+      }
+      .card {
+        width: 100vw;
+        height: 100vh;   /* Full vertical screen fill per card */
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        padding: 16px;
+      }
+      h1 {
+        display: none; /* Hide header on mobile */
+      }
+      .bottom-controls {
+        display: none; /* Hide fixed bottom on mobile */
+      }
+      .card-buttons {
+        display: flex; /* Show buttons at bottom of each card */
+      }
+      html, body {
+        overflow-y: scroll; /* Smooth vertical scrolling */
+      }
+    }
+
+    /* 🖨 Print styles */
+    @media print {
+      body { background: #fff; color: #000; }
+      #cards-container { flex-direction: row; flex-wrap: wrap; }
+      .card {
+        width: 45%;
+        min-height: auto;
+        margin: 10px;
+        border: none;
+        box-shadow: none;
+        background: white;
+      }
+      .scene-heading { text-transform: uppercase; }
+      .top-controls, .bottom-controls, h1, .card-buttons { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Screenplay Card View</h1>
+
+  <div class="top-controls">
+    <button id="toggleDarkModeBtn">🌙</button>
+    <button id="printPreviewBtn">P</button>
+  </div>
+
+  <div id="cards-container"></div>
+
+  <div class="bottom-controls">
+    <button id="addCardBtn">+</button>
+  </div>
+
+  <script>
+    const cardsContainer = document.getElementById("cards-container");
+    const addCardBtn = document.getElementById("addCardBtn");
+    const printPreviewBtn = document.getElementById("printPreviewBtn");
+    const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
+
+    let isDarkMode = false;
+
+    function createCard() {
+      // Lock previous cards
+      document.querySelectorAll(".card textarea").forEach(el => el.disabled = true);
+
+      const card = document.createElement("div");
+      card.classList.add("card");
+
+      const sceneHeading = document.createElement("textarea");
+      sceneHeading.classList.add("scene-heading");
+      sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
+
+      const description = document.createElement("textarea");
+      description.classList.add("description");
+      description.placeholder = "Description / Action Lines";
+
+      // Add card-specific buttons for mobile
+      const cardButtons = document.createElement("div");
+      cardButtons.classList.add("card-buttons");
+
+      const addBtn = document.createElement("button");
+      addBtn.textContent = "+";
+      addBtn.addEventListener("click", createCard);
+
+      const fullscreenBtn = document.createElement("button");
+      fullscreenBtn.textContent = "[]";
+      fullscreenBtn.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
+        }
+      });
+
+      cardButtons.appendChild(addBtn);
+      cardButtons.appendChild(fullscreenBtn);
+
+      card.appendChild(sceneHeading);
+      card.appendChild(description);
+      card.appendChild(cardButtons);
+      cardsContainer.appendChild(card);
+
+      card.scrollIntoView({ behavior: "smooth" });
+      sceneHeading.focus();
+    }
+
+    addCardBtn.addEventListener("click", createCard);
+    printPreviewBtn.addEventListener("click", () => window.print());
+    toggleDarkModeBtn.addEventListener("click", () => {
+      isDarkMode = !isDarkMode;
+      document.body.classList.toggle("dark-mode", isDarkMode);
+      toggleDarkModeBtn.textContent = isDarkMode ? "☀️" : "🌙";
+    });
+
+    // Create one card on load
+    createCard();
+  </script>
+</body>
+</html>
