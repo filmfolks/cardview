@@ -39,6 +39,7 @@
       box-sizing: border-box;
       width: 100%;
       min-height: 300px;
+      height: auto; /* Allow dynamic expansion */
       position: relative; /* For buttons inside */
     }
     body.dark-mode .card {
@@ -55,6 +56,8 @@
       color: inherit;
       resize: none;
       width: 100%;
+      min-height: 30px; /* Starting height */
+      overflow: hidden; /* Hide internal scroll */
     }
     .scene-heading {
       font-size: 1.2rem;
@@ -115,22 +118,23 @@
       gap: 10px;
     }
 
-    /* 📱 Mobile: Vertical full-screen cards */
+    /* 📱 Mobile: Vertical full-screen cards with expansion */
     @media (max-width: 600px) {
       #cards-container {
         gap: 0;
         padding: 0;
         margin: 0;
-        padding-top: 50px; /* Extra space for top-controls to avoid overlap */
+        padding-top: 50px; /* Extra space for top-controls */
       }
       .card {
         width: 100vw;
-        height: 100vh;   /* Full vertical screen fill per card */
+        min-height: 100vh;   /* Start at full screen, but expand */
+        height: auto;        /* Grow with content */
         border-radius: 0;
         box-shadow: none;
         margin: 0;
         padding: 16px;
-        padding-top: 20px; /* Extra padding inside card to push content below buttons */
+        padding-top: 20px; /* Push content below top buttons */
       }
       h1 {
         display: none; /* Hide header on mobile */
@@ -142,7 +146,7 @@
         display: flex; /* Show buttons at bottom of each card */
       }
       .top-controls {
-        top: 5px; /* Slightly higher to feel "above" the card */
+        top: 5px; /* Above the card */
       }
       html, body {
         overflow-y: scroll; /* Smooth vertical scrolling */
@@ -188,6 +192,11 @@
 
     let isDarkMode = false;
 
+    function autoResize(textarea) {
+      textarea.style.height = 'auto'; // Reset
+      textarea.style.height = `${textarea.scrollHeight}px`; // Expand to fit content
+    }
+
     function createCard() {
       const card = document.createElement("div");
       card.classList.add("card");
@@ -195,10 +204,12 @@
       const sceneHeading = document.createElement("textarea");
       sceneHeading.classList.add("scene-heading");
       sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
+      sceneHeading.addEventListener('input', () => autoResize(sceneHeading)); // Auto-expand on type
 
       const description = document.createElement("textarea");
       description.classList.add("description");
       description.placeholder = "Description / Action Lines";
+      description.addEventListener('input', () => autoResize(description)); // Auto-expand on type
 
       // Add card-specific buttons for mobile
       const cardButtons = document.createElement("div");
@@ -229,6 +240,10 @@
       // Scroll to the new card (shows only it on mobile)
       card.scrollIntoView({ behavior: "smooth", block: "start" });
       sceneHeading.focus();
+
+      // Initial resize
+      autoResize(sceneHeading);
+      autoResize(description);
     }
 
     addCardBtn.addEventListener("click", createCard);
