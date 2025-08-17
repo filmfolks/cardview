@@ -40,7 +40,7 @@
       width: 100%;
       min-height: 300px;
       height: auto; /* Allow dynamic expansion */
-      position: relative; /* For buttons inside */
+      position: relative; /* For positioning */
     }
     body.dark-mode .card {
       background: #1e1e1e;
@@ -102,45 +102,44 @@
       cursor: pointer;
       border: none;
       border-radius: 5px;
-      background-color: #007bff;
-      color: white;
+      background-color: #e0e0e0; /* Simple light gray */
+      color: black; /* Black text in normal mode */
       transition: background 0.3s;
     }
     button:hover {
-      background-color: #0056b3;
+      background-color: #d0d0d0; /* Subtle hover */
     }
     body.dark-mode button {
-      background-color: #0056b3;
+      background-color: #333; /* Dark gray */
+      color: white; /* Light text in dark mode */
     }
     body.dark-mode button:hover {
-      background-color: #007bff;
+      background-color: #444;
     }
 
     /* Card-specific buttons (add and fullscreen) */
     .card-buttons {
       display: none; /* Hidden by default */
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
+      justify-content: center;
       gap: 10px;
+      margin-top: 10px; /* Space below the card */
     }
 
     /* 📱 Mobile: Smaller cards for multiple visible, with expansion */
     @media (max-width: 600px) {
       #cards-container {
-        gap: 20px; /* Space between cards */
+        gap: 0; /* Adjust gap to account for buttons below */
         padding: 0;
         margin: 0;
         padding-top: 50px; /* Extra space for top-controls */
       }
       .card {
         width: 100vw;
-        min-height: 150px; /* Further reduced (half of previous) for more visible on screen */
+        min-height: 150px; /* Reduced size */
         height: auto; /* Grow with content */
         border-radius: 8px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        margin: 0;
+        margin: 10px 0; /* Space for buttons */
         padding: 16px;
         padding-top: 20px; /* Push content below top buttons */
       }
@@ -155,6 +154,9 @@
       }
       html, body {
         overflow-y: scroll; /* Smooth vertical scrolling */
+      }
+      .card-buttons {
+        margin-bottom: 20px; /* Extra space after buttons on mobile */
       }
     }
 
@@ -204,16 +206,16 @@
     }
 
     function setActiveCard(card) {
-      if (activeCard) {
-        activeCard.querySelector('.card-buttons').style.display = 'none';
+      if (activeCard && activeCard.nextSibling && activeCard.nextSibling.classList.contains('card-buttons')) {
+        activeCard.nextSibling.style.display = 'none';
       }
       activeCard = card;
-      if (activeCard) {
-        activeCard.querySelector('.card-buttons').style.display = 'flex';
+      if (activeCard && activeCard.nextSibling && activeCard.nextSibling.classList.contains('card-buttons')) {
+        activeCard.nextSibling.style.display = 'flex';
       }
     }
 
-    function createCard(makeActive = true) {
+    function createCard(makeActive = true, insertAfter = null) {
       const card = document.createElement("div");
       card.classList.add("card");
 
@@ -229,13 +231,17 @@
       description.addEventListener('input', () => autoResize(description)); // Auto-expand on type
       description.addEventListener('focus', () => setActiveCard(card));
 
-      // Add card-specific buttons for mobile
+      card.appendChild(sceneHeading);
+      card.appendChild(description);
+
+      // Create buttons div (to be inserted after the card)
       const cardButtons = document.createElement("div");
       cardButtons.classList.add("card-buttons");
+      cardButtons.style.display = 'none'; // Hidden initially
 
       const addBtn = document.createElement("button");
       addBtn.textContent = "+";
-      addBtn.addEventListener("click", () => createCard(true));
+      addBtn.addEventListener("click", () => createCard(true, card)); // Insert after this card
 
       const fullscreenBtn = document.createElement("button");
       fullscreenBtn.textContent = "[]";
@@ -250,10 +256,14 @@
       cardButtons.appendChild(addBtn);
       cardButtons.appendChild(fullscreenBtn);
 
-      card.appendChild(sceneHeading);
-      card.appendChild(description);
-      card.appendChild(cardButtons);
-      cardsContainer.appendChild(card);
+      // Insert card and its buttons
+      if (insertAfter) {
+        insertAfter.after(card);
+        card.after(cardButtons);
+      } else {
+        cardsContainer.appendChild(card);
+        card.after(cardButtons);
+      }
 
       // Initial resize
       autoResize(sceneHeading);
