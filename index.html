@@ -118,7 +118,7 @@
     }
 
     /* Card-specific buttons (add and fullscreen) */
-    .card-buttons {
+    #shared-card-buttons {
       display: none; /* Hidden by default */
       justify-content: center;
       gap: 10px;
@@ -155,25 +155,33 @@
       html, body {
         overflow-y: scroll; /* Smooth vertical scrolling */
       }
-      .card-buttons {
+      #shared-card-buttons {
         margin-bottom: 20px; /* Extra space after buttons on mobile */
       }
     }
 
-    /* 🖨 Print styles */
+    /* 🖨 Print styles - Compact for paper saving */
     @media print {
       body { background: #fff; color: #000; }
-      #cards-container { flex-direction: row; flex-wrap: wrap; }
+      #cards-container {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0; /* No gaps */
+        margin: 0;
+        padding: 0;
+      }
       .card {
-        width: 45%;
+        width: 48%; /* Two per row */
         min-height: auto;
-        margin: 10px;
+        margin: 5px; /* Small margins to save paper */
+        padding: 10px; /* Reduced padding */
         border: none;
         box-shadow: none;
         background: white;
+        page-break-inside: avoid; /* Prevent breaking cards across pages */
       }
       .scene-heading { text-transform: uppercase; }
-      .top-controls, .bottom-controls, h1, .card-buttons { display: none; }
+      .top-controls, .bottom-controls, h1, #shared-card-buttons { display: none; }
     }
   </style>
 </head>
@@ -191,11 +199,20 @@
     <button id="addCardBtn">+</button>
   </div>
 
+  <!-- Shared buttons div (moves dynamically) -->
+  <div id="shared-card-buttons">
+    <button id="shared-add-btn">+</button>
+    <button id="shared-fullscreen-btn">[]</button>
+  </div>
+
   <script>
     const cardsContainer = document.getElementById("cards-container");
     const addCardBtn = document.getElementById("addCardBtn");
     const printPreviewBtn = document.getElementById("printPreviewBtn");
     const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
+    const sharedButtons = document.getElementById("shared-card-buttons");
+    const sharedAddBtn = document.getElementById("shared-add-btn");
+    const sharedFullscreenBtn = document.getElementById("shared-fullscreen-btn");
 
     let isDarkMode = false;
     let activeCard = null;
@@ -206,12 +223,12 @@
     }
 
     function setActiveCard(card) {
-      if (activeCard && activeCard.nextSibling && activeCard.nextSibling.classList.contains('card-buttons')) {
-        activeCard.nextSibling.style.display = 'none';
-      }
+      if (activeCard === card) return;
       activeCard = card;
-      if (activeCard && activeCard.nextSibling && activeCard.nextSibling.classList.contains('card-buttons')) {
-        activeCard.nextSibling.style.display = 'flex';
+      sharedButtons.style.display = 'none'; // Hide first
+      if (activeCard) {
+        activeCard.after(sharedButtons); // Move buttons below the active card
+        sharedButtons.style.display = 'flex';
       }
     }
 
@@ -234,35 +251,11 @@
       card.appendChild(sceneHeading);
       card.appendChild(description);
 
-      // Create buttons div (to be inserted after the card)
-      const cardButtons = document.createElement("div");
-      cardButtons.classList.add("card-buttons");
-      cardButtons.style.display = 'none'; // Hidden initially
-
-      const addBtn = document.createElement("button");
-      addBtn.textContent = "+";
-      addBtn.addEventListener("click", () => createCard(true, card)); // Insert after this card
-
-      const fullscreenBtn = document.createElement("button");
-      fullscreenBtn.textContent = "[]";
-      fullscreenBtn.addEventListener("click", () => {
-        if (!document.fullscreenElement) {
-          card.requestFullscreen(); // Fullscreen only this card
-        } else {
-          document.exitFullscreen();
-        }
-      });
-
-      cardButtons.appendChild(addBtn);
-      cardButtons.appendChild(fullscreenBtn);
-
-      // Insert card and its buttons
+      // Insert card
       if (insertAfter) {
         insertAfter.after(card);
-        card.after(cardButtons);
       } else {
         cardsContainer.appendChild(card);
-        card.after(cardButtons);
       }
 
       // Initial resize
@@ -276,6 +269,18 @@
         setActiveCard(card);
       }
     }
+
+    // Event listeners for shared buttons
+    sharedAddBtn.addEventListener("click", () => {
+      if (activeCard) createCard(true, activeCard);
+    });
+    sharedFullscreenBtn.addEventListener("click", () => {
+      if (activeCard && !document.fullscreenElement) {
+        activeCard.requestFullscreen(); // Fullscreen only this card
+      } else {
+        document.exitFullscreen();
+      }
+    });
 
     addCardBtn.addEventListener("click", () => createCard(true));
     printPreviewBtn.addEventListener("click", () => window.print());
