@@ -4,460 +4,255 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Screenplay Card View</title>
-  <!-- html-to-image library for JPG export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #fafafa;
-      color: #000;
-      margin: 0;
-      padding: 0;
-      transition: background 0.3s, color 0.3s;
-    }
-    #zoom-wrapper {
-      transition: transform 0.2s;
-      transform-origin: top left;
-    }
-    body.dark-mode {
-      background: #121212;
-      color: #f0f0f0;
-    }
+    body { font-family: Arial, sans-serif; background: #fafafa; color: #000; margin: 0; padding: 0; }
     #cards-container {
       display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 1200px;
-      margin: 60px auto;
-      gap: 20px;
-      padding: 16px;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      width: 100vw;
+      max-width: none;
+      margin: 60px auto 0 auto;
+      gap: 0;
+      padding: 0 0 16px 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      min-height: 300px;
     }
     .card {
       background: #fff;
       border: 1px solid #888;
       border-radius: 2px;
-      padding: 12px 10px;
       box-shadow: none;
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
-      width: 100%;
-      min-height: 160px;
-      height: auto;
+      min-width: 270px;
+      width: 270px;
+      height: 200px;
+      max-height: none;
+      margin: 2px 6px;
       position: relative;
       font-family: "Courier New", Courier, monospace;
       font-size: 13px;
-      margin: 0;
-    }
-    body.dark-mode .card {
-      background: #1e1e1e;
-      border-color: #555;
-    }
-    .scene-heading,
-    .description {
-      border: none;
-      outline: none;
-      background: transparent;
-      color: inherit;
-      resize: none;
-      width: 100%;
-      min-height: 20px;
+      transition: all 0.13s;
       overflow: hidden;
-      font-family: inherit;
     }
-    .scene-heading {
-      font-weight: bold;
-      font-size: 14px;
-      margin: 0 0 2px 0;
-      line-height: 1.2;
-      padding: 0;
-      background: transparent;
-      border: none;
-    }
-    .description {
-      font-size: 13px;
-      margin: 0;
-      line-height: 1.2;
-      padding: 0;
-      background: transparent;
-      border: none;
-      flex-grow: 1;
-    }
+    .scene-heading, .description { font-family: inherit; }
+    .scene-heading { font-weight: bold; font-size: 14px; margin: 0 0 2px 0; line-height: 1.2; padding: 0; }
+    .description { font-size: 13px; margin: 0; line-height: 1.2; padding: 0; flex-grow: 1; }
     .top-controls {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      gap: 10px;
-      z-index: 20;
+      position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 20;
     }
-    .top-controls button {
-      width: 32px;
-      height: 32px;
-      font-size: 16px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .bottom-controls {
-      position: fixed;
-      bottom: 10px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: center;
-      z-index: 10;
-    }
-    button {
-      font-size: 1.2rem;
-      padding: 8px 12px;
-      cursor: pointer;
-      border: none;
-      border-radius: 5px;
-      background-color: #e0e0e0;
-      color: black;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background-color: #d0d0d0;
-    }
-    body.dark-mode button {
-      background-color: #333;
-      color: white;
-    }
-    body.dark-mode button:hover {
-      background-color: #444;
-    }
-    #shared-card-buttons {
-      display: none;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    #exit-fullscreen-btn {
-      display: none;
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 30;
-      padding: 10px 20px;
-      font-size: 1rem;
-    }
-    .fullscreen-exit-wrapper {
-      text-align: center;
-      margin-top: 10px;
-    }
-    .fullscreen-exit-btn {
-      background-color: #e0e0e0;
-      border-radius: 5px;
-      border: none;
-      padding: 8px 12px;
-      cursor: pointer;
-      font-size: 1rem;
-      color: black;
-      transition: background 0.3s;
-    }
+    .top-controls button { width: 32px; height: 32px; font-size: 16px; }
+    .bottom-controls { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; z-index: 10; }
+    button { font-size: 1.2rem; padding: 8px 12px; cursor: pointer; border: none; border-radius: 5px; background-color: #e0e0e0; color: black; }
+    button:hover { background-color: #d0d0d0; }
+    #shared-card-buttons { display: none; justify-content: center; gap: 10px; margin-top: 10px; }
+    #exit-fullscreen-btn { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 30; padding: 10px 20px; font-size: 1rem; }
+    .fullscreen-exit-wrapper { text-align: center; margin-top: 10px; }
+    .fullscreen-exit-btn { background-color: #e0e0e0; border-radius: 5px; border: none; padding: 8px 12px; cursor: pointer; font-size: 1rem; color: black; transition: background 0.3s; }
     .fullscreen-exit-btn:hover { background-color: #d0d0d0; }
+    body.dark-mode { background: #121212; color: #f0f0f0; }
+    body.dark-mode .card { background: #1e1e1e; border-color: #555; }
+    body.dark-mode button { background-color: #333; color: white; }
+    body.dark-mode button:hover { background-color: #444; }
     body.dark-mode .fullscreen-exit-btn { background-color: #333; color: white; }
     body.dark-mode .fullscreen-exit-btn:hover { background-color: #444; }
-    @media (max-width: 600px) {
-      #cards-container { gap: 0; padding: 0; margin: 0; padding-top: 50px; }
-      .card { width: 100vw; min-height: 120px; height: auto; margin: 10px 0; padding: 12px 10px; }
-      h1 { display: none; }
-      .bottom-controls { display: none; }
-      .top-controls { top: 5px; }
-      html, body { overflow-y: scroll; }
-      #shared-card-buttons { margin-bottom: 20px; }
-    }
+    /* ZOOM LEVEL CLASSES */
+    .zoom-1 { font-size: 13px; height: 200px;}
+    .zoom-1 .scene-heading { font-size: 14px;}
+    .zoom-2 { font-size: 17px; height: 260px;}
+    .zoom-2 .scene-heading { font-size: 18px;}
+    .zoom-3 { font-size: 21px; height: 340px;}
+    .zoom-3 .scene-heading { font-size: 22px;}
+    .zoom-4 { font-size: 26px; height: 440px;}
+    .zoom-4 .scene-heading { font-size: 27px;}
+    .card.zoom-1 { min-width: 270px; width: 270px; }
+    .card.zoom-2 { min-width: 360px; width: 360px; }
+    .card.zoom-3 { min-width: 480px; width: 480px; }
+    .card.zoom-4 { min-width: 610px; width: 610px; }
     @media print {
-      body { background: #fff; color: #000; }
-      #zoom-wrapper {
-        transform: none !important;
-      }
-      #cards-container {
-        display: flex;
-        flex-wrap: wrap;
-        flex-direction: row;
-        gap: 0;
-        margin: 0;
-        padding: 0;
-      }
-      .card {
-        width: 24%;
-        min-width: 0;
-        min-height: 120px;
-        margin: 2px 1px;
-        padding: 7px 6px 5px 8px;
-        border: 1px solid #888 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        background: white !important;
-        page-break-inside: avoid;
-        font-family: "Courier New", Courier, monospace;
-        font-size: 11px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-      }
-      .scene-heading {
-        font-weight: bold !important;
-        font-size: 12px !important;
-        margin-bottom: 2px !important;
-        line-height: 1.1 !important;
-        background: transparent !important;
-        border: none !important;
-        outline: none !important;
-        padding: 0 !important;
-        resize: none !important;
-        font-family: inherit !important;
-      }
-      .description {
-        font-size: 11px !important;
-        margin: 0 !important;
-        background: transparent !important;
-        border: none !important;
-        outline: none !important;
-        padding: 0 !important;
-        resize: none !important;
-        font-family: inherit !important;
-        line-height: 1.1 !important;
-      }
+      #cards-container { flex-wrap: wrap !important; overflow: visible !important; }
+      .card { font-size: 11px !important; width: 24% !important; min-width: 0 !important; height: auto !important; }
+      .scene-heading { font-size: 12px !important; }
       .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn, .fullscreen-exit-wrapper {
         display: none !important;
       }
     }
-    .print-like {
-      width: 100% !important;
-      min-height: auto !important;
-      margin: 0 !important;
-      padding: 7px 6px 5px 8px !important;
-      border: 1px solid #888 !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      background: white !important;
-      font-family: "Courier New", Courier, monospace !important;
-      font-size: 11px !important;
-    }
-    .print-like .scene-heading {
-      font-weight: bold !important;
-      font-size: 12px !important;
-      margin-bottom: 2px !important;
-      line-height: 1.1 !important;
-      font-family: inherit !important;
-    }
-    .print-like .description {
-      font-size: 11px !important;
-      margin: 0 !important;
-      font-family: inherit !important;
-      line-height: 1.1 !important;
-    }
   </style>
 </head>
 <body>
-  <h1>Screenplay Card View</h1>
-  <div class="top-controls">
-    <button id="zoomInBtn">+</button>
-    <button id="zoomOutBtn">-</button>
-    <button id="toggleDarkModeBtn">🌙</button>
-    <button id="toggleNumberBtn">N</button>
-    <button id="saveImageBtn">i</button>
-    <button id="saveTextBtn">T</button>
-    <button id="overallFullscreenBtn">⛶</button>
-    <button id="printPreviewBtn">P</button>
-  </div>
-  <div id="zoom-wrapper">
-    <div id="cards-container"></div>
-  </div>
-  <div class="bottom-controls">
-    <button id="addCardBtn">+</button>
-  </div>
-  <div id="shared-card-buttons">
-    <button id="shared-add-btn">+</button>
-    <button id="shared-fullscreen-btn">[]</button>
-  </div>
-  <button id="exit-fullscreen-btn">Exit Fullscreen</button>
-  <script>
-    const zoomWrapper = document.getElementById("zoom-wrapper");
-    const cardsContainer = document.getElementById("cards-container");
-    const zoomInBtn = document.getElementById("zoomInBtn");
-    const zoomOutBtn = document.getElementById("zoomOutBtn");
-    const addCardBtn = document.getElementById("addCardBtn");
-    const printPreviewBtn = document.getElementById("printPreviewBtn");
-    const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
-    const toggleNumberBtn = document.getElementById("toggleNumberBtn");
-    const saveImageBtn = document.getElementById("saveImageBtn");
-    const saveTextBtn = document.getElementById("saveTextBtn");
-    const overallFullscreenBtn = document.getElementById("overallFullscreenBtn");
-    const sharedButtons = document.getElementById("shared-card-buttons");
-    const sharedAddBtn = document.getElementById("shared-add-btn");
-    const sharedFullscreenBtn = document.getElementById("shared-fullscreen-btn");
-    const exitFullscreenBtn = document.getElementById("exit-fullscreen-btn");
-    let isDarkMode = false;
-    let activeCard = null;
-    let numberingEnabled = false;
-    let zoomLevel = 1.0;
-    function autoResize(textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
+<div class="top-controls">
+  <button id="zoomInBtn">+</button>
+  <button id="zoomOutBtn">-</button>
+  <button id="toggleDarkModeBtn">🌙</button>
+  <button id="toggleNumberBtn">N</button>
+  <button id="saveImageBtn">i</button>
+  <button id="saveTextBtn">T</button>
+  <button id="overallFullscreenBtn">⛶</button>
+  <button id="printPreviewBtn">P</button>
+</div>
+<div id="cards-container"></div>
+<div class="bottom-controls"><button id="addCardBtn">+</button></div>
+<div id="shared-card-buttons">
+  <button id="shared-add-btn">+</button>
+  <button id="shared-fullscreen-btn">[]</button>
+</div>
+<button id="exit-fullscreen-btn">Exit Fullscreen</button>
+<script>
+  // Controls and state
+  const cardsContainer = document.getElementById("cards-container");
+  const zoomInBtn = document.getElementById("zoomInBtn");
+  const zoomOutBtn = document.getElementById("zoomOutBtn");
+  const addCardBtn = document.getElementById("addCardBtn");
+  const printPreviewBtn = document.getElementById("printPreviewBtn");
+  const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
+  const toggleNumberBtn = document.getElementById("toggleNumberBtn");
+  const saveImageBtn = document.getElementById("saveImageBtn");
+  const saveTextBtn = document.getElementById("saveTextBtn");
+  const overallFullscreenBtn = document.getElementById("overallFullscreenBtn");
+  const sharedButtons = document.getElementById("shared-card-buttons");
+  const sharedAddBtn = document.getElementById("shared-add-btn");
+  const sharedFullscreenBtn = document.getElementById("shared-fullscreen-btn");
+  const exitFullscreenBtn = document.getElementById("exit-fullscreen-btn");
+  let isDarkMode = false, activeCard = null, numberingEnabled = false, zoomLevel = 1;
+
+  function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }
+  function setActiveCard(card) {
+    if (activeCard === card) return;
+    activeCard = card;
+    sharedButtons.style.display = 'none';
+    if (activeCard) {
+      activeCard.after(sharedButtons);
+      sharedButtons.style.display = 'flex';
     }
-    function setActiveCard(card) {
-      if (activeCard === card) return;
-      activeCard = card;
-      sharedButtons.style.display = 'none';
-      if (activeCard) {
-        activeCard.after(sharedButtons);
-        sharedButtons.style.display = 'flex';
-      }
-    }
-    function createCard(makeActive = true, insertAfter = null) {
-      const card = document.createElement("div");
-      card.classList.add("card");
-      const sceneHeading = document.createElement("textarea");
-      sceneHeading.classList.add("scene-heading");
-      sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
-      sceneHeading.addEventListener('input', () => autoResize(sceneHeading));
-      sceneHeading.addEventListener('focus', () => setActiveCard(card));
-      const description = document.createElement("textarea");
-      description.classList.add("description");
-      description.placeholder = "Description / Action Lines";
-      description.addEventListener('input', () => autoResize(description));
-      description.addEventListener('focus', () => setActiveCard(card));
-      card.appendChild(sceneHeading);
-      card.appendChild(description);
-      if (insertAfter) {
-        insertAfter.after(card);
+  }
+  function createCard(makeActive = true, insertAfter = null) {
+    const card = document.createElement("div"); card.classList.add("card");
+    const sceneHeading = document.createElement("textarea");
+    sceneHeading.classList.add("scene-heading");
+    sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
+    sceneHeading.addEventListener('input', () => autoResize(sceneHeading));
+    sceneHeading.addEventListener('focus', () => setActiveCard(card));
+    const description = document.createElement("textarea");
+    description.classList.add("description");
+    description.placeholder = "Description / Action Lines";
+    description.addEventListener('input', () => autoResize(description));
+    description.addEventListener('focus', () => setActiveCard(card));
+    card.appendChild(sceneHeading); card.appendChild(description);
+    if (insertAfter) insertAfter.after(card); else cardsContainer.appendChild(card);
+    updateZoomClass();
+    autoResize(sceneHeading); autoResize(description);
+    if (makeActive) { card.scrollIntoView({ behavior: "smooth", block: "nearest" }); sceneHeading.focus(); setActiveCard(card); }
+  }
+  function toggleNumbering() {
+    numberingEnabled = !numberingEnabled;
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+      const heading = card.querySelector('.scene-heading');
+      if (numberingEnabled) {
+        heading.value = `${index + 1}. ${heading.value.replace(/^\d+\. ?/, '')}`;
       } else {
-        cardsContainer.appendChild(card);
+        heading.value = heading.value.replace(/^\d+\. ?/, '');
       }
-      autoResize(sceneHeading);
-      autoResize(description);
-      if (makeActive) {
-        card.scrollIntoView({ behavior: "smooth", block: "start" });
-        sceneHeading.focus();
-        setActiveCard(card);
-      }
-    }
-    function toggleNumbering() {
-      numberingEnabled = !numberingEnabled;
-      const cards = document.querySelectorAll('.card');
-      cards.forEach((card, index) => {
-        const heading = card.querySelector('.scene-heading');
-        if (numberingEnabled) {
-          heading.value = `${index + 1}. ${heading.value.replace(/^\d+\. ?/, '')}`;
-        } else {
-          heading.value = heading.value.replace(/^\d+\. ?/, '');
-        }
-        autoResize(heading);
+      autoResize(heading);
+    });
+  }
+  function saveActiveCardAsJPG() {
+    if (!activeCard) { alert("Please select a card to edit first."); return; }
+    const isFullscreen = document.fullscreenElement === activeCard;
+    let originalClass = activeCard.className;
+    if (isFullscreen) { activeCard.classList.add('print-like'); }
+    htmlToImage.toJpeg(activeCard, { quality: 0.95 })
+      .then(function (dataUrl) {
+        const link = document.createElement('a'); link.download = 'card.jpg'; link.href = dataUrl; link.click();
+        if (isFullscreen) { activeCard.className = originalClass; }
+      })
+      .catch(function (error) { console.error('Error saving JPG:', error);
+        if (isFullscreen) { activeCard.className = originalClass; }
       });
+  }
+  function saveCardsAsText() {
+    const cards = document.querySelectorAll('.card'); let textContent = '';
+    cards.forEach(card => {
+      const heading = card.querySelector('.scene-heading').value.trim();
+      const desc = card.querySelector('.description').value.trim();
+      textContent += heading + '\n\n' + desc + '\n\n\n';
+    });
+    const blob = new Blob([textContent], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cards.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function createPerCardExitButton(card) {
+    const existingWrapper = card.querySelector('.fullscreen-exit-wrapper');
+    if (existingWrapper) existingWrapper.remove();
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('fullscreen-exit-wrapper');
+    const exitBtn = document.createElement('button');
+    exitBtn.classList.add('fullscreen-exit-btn');
+    exitBtn.textContent = 'Exit Fullscreen';
+    exitBtn.onclick = () => document.exitFullscreen();
+    wrapper.appendChild(exitBtn);
+    card.appendChild(wrapper);
+  }
+  sharedAddBtn.addEventListener("click", () => { if (activeCard) createCard(true, activeCard); });
+  sharedFullscreenBtn.addEventListener("click", () => {
+    if (activeCard && !document.fullscreenElement) { activeCard.requestFullscreen(); }
+    else { document.exitFullscreen(); }
+  });
+  overallFullscreenBtn.addEventListener("click", () => {
+    if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); }
+    else { document.exitFullscreen(); }
+  });
+  exitFullscreenBtn.addEventListener("click", () => document.exitFullscreen());
+  document.addEventListener("fullscreenchange", () => {
+    const fsElement = document.fullscreenElement;
+    if (fsElement === document.documentElement) {
+      exitFullscreenBtn.style.display = 'block';
+    } else if (fsElement && fsElement.classList.contains('card')) {
+      createPerCardExitButton(fsElement);
+    } else {
+      exitFullscreenBtn.style.display = 'none';
+      document.querySelectorAll('.fullscreen-exit-wrapper').forEach(w => w.remove());
     }
-    function saveActiveCardAsJPG() {
-      if (!activeCard) {
-        alert("Please select a card to edit first.");
-        return;
-      }
-      const isFullscreen = document.fullscreenElement === activeCard;
-      let originalClass = activeCard.className;
-      if (isFullscreen) {
-        activeCard.classList.add('print-like');
-      }
-      htmlToImage.toJpeg(activeCard, { quality: 0.95 })
-        .then(function (dataUrl) {
-          const link = document.createElement('a');
-          link.download = 'card.jpg';
-          link.href = dataUrl;
-          link.click();
-          if (isFullscreen) {
-            activeCard.className = originalClass;
-          }
-        })
-        .catch(function (error) {
-          console.error('Error saving JPG:', error);
-          if (isFullscreen) {
-            activeCard.className = originalClass;
-          }
-        });
-    }
-    function saveCardsAsText() {
-      const cards = document.querySelectorAll('.card');
-      let textContent = '';
-      cards.forEach(card => {
-        const heading = card.querySelector('.scene-heading').value.trim();
-        const desc = card.querySelector('.description').value.trim();
-        textContent += heading + '\n\n' + desc + '\n\n\n';
-      });
-      const blob = new Blob([textContent], {type: 'text/plain'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'cards.txt';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-    function createPerCardExitButton(card) {
-      const existingWrapper = card.querySelector('.fullscreen-exit-wrapper');
-      if (existingWrapper) existingWrapper.remove();
-      const wrapper = document.createElement('div');
-      wrapper.classList.add('fullscreen-exit-wrapper');
-      const exitBtn = document.createElement('button');
-      exitBtn.classList.add('fullscreen-exit-btn');
-      exitBtn.textContent = 'Exit Fullscreen';
-      exitBtn.onclick = () => document.exitFullscreen();
-      wrapper.appendChild(exitBtn);
-      card.appendChild(wrapper);
-    }
-    sharedAddBtn.addEventListener("click", () => {
-      if (activeCard) createCard(true, activeCard);
+  });
+  addCardBtn.addEventListener("click", () => createCard(true));
+  printPreviewBtn.addEventListener("click", () => window.print());
+  toggleDarkModeBtn.addEventListener("click", () => {
+    isDarkMode = !isDarkMode;
+    document.body.classList.toggle("dark-mode", isDarkMode);
+    toggleDarkModeBtn.textContent = isDarkMode ? "☀️" : "🌙";
+  });
+  toggleNumberBtn.addEventListener("click", toggleNumbering);
+  saveImageBtn.addEventListener("click", saveActiveCardAsJPG);
+  saveTextBtn.addEventListener("click", saveCardsAsText);
+
+  // --- Zoom logic ---
+  function updateZoomClass() {
+    document.querySelectorAll('.card').forEach(card => {
+      for(let i=1; i<=4; i++) card.classList.remove('zoom-'+i);
+      card.classList.add('zoom-'+zoomLevel);
     });
-    sharedFullscreenBtn.addEventListener("click", () => {
-      if (activeCard && !document.fullscreenElement) {
-        activeCard.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
-    });
-    overallFullscreenBtn.addEventListener("click", () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
-    });
-    exitFullscreenBtn.addEventListener("click", () => document.exitFullscreen());
-    document.addEventListener("fullscreenchange", () => {
-      const fsElement = document.fullscreenElement;
-      if (fsElement === document.documentElement) {
-        exitFullscreenBtn.style.display = 'block';
-      } else if (fsElement && fsElement.classList.contains('card')) {
-        createPerCardExitButton(fsElement);
-      } else {
-        exitFullscreenBtn.style.display = 'none';
-        document.querySelectorAll('.fullscreen-exit-wrapper').forEach(w => w.remove());
-      }
-    });
-    addCardBtn.addEventListener("click", () => createCard(true));
-    printPreviewBtn.addEventListener("click", () => window.print());
-    toggleDarkModeBtn.addEventListener("click", () => {
-      isDarkMode = !isDarkMode;
-      document.body.classList.toggle("dark-mode", isDarkMode);
-      toggleDarkModeBtn.textContent = isDarkMode ? "☀️" : "🌙";
-    });
-    toggleNumberBtn.addEventListener("click", toggleNumbering);
-    saveImageBtn.addEventListener("click", saveActiveCardAsJPG);
-    saveTextBtn.addEventListener("click", saveCardsAsText);
-    // Zoom In and Out logic
-    zoomInBtn.addEventListener('click', () => {
-      zoomLevel = Math.min(zoomLevel + 0.1, 2);
-      zoomWrapper.style.transform = `scale(${zoomLevel})`;
-    });
-    zoomOutBtn.addEventListener('click', () => {
-      zoomLevel = Math.max(zoomLevel - 0.1, 0.5);
-      zoomWrapper.style.transform = `scale(${zoomLevel})`;
-    });
-    createCard(true);
-  </script>
+  }
+  zoomInBtn.addEventListener('click', () => { if (zoomLevel < 4) { zoomLevel++; updateZoomClass(); } });
+  zoomOutBtn.addEventListener('click', () => { if (zoomLevel > 1) { zoomLevel--; updateZoomClass(); } });
+  // Initial zoom
+  updateZoomClass();
+
+  // Start with one editable card
+  createCard(true);
+</script>
 </body>
 </html>
