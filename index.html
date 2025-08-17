@@ -160,7 +160,7 @@
       }
     }
 
-    /* 🖨 Print styles - Compact for paper saving */
+    /* 🖨 Print styles - Compact for paper saving, at least 4 per row */
     @media print {
       body { background: #fff; color: #000; }
       #cards-container {
@@ -171,17 +171,24 @@
         padding: 0;
       }
       .card {
-        width: 48%; /* Two per row */
+        width: 23%; /* Reduced for ~4 per row on A4 */
         min-height: auto;
-        margin: 5px; /* Small margins to save paper */
-        padding: 10px; /* Reduced padding */
+        margin: 2px; /* Minimal margins */
+        padding: 5px; /* Reduced padding */
         border: none;
         box-shadow: none;
         background: white;
         page-break-inside: avoid; /* Prevent breaking cards across pages */
+        font-size: 0.8rem; /* Smaller text to fit more */
       }
-      .scene-heading { text-transform: uppercase; }
-      .top-controls, .bottom-controls, h1, #shared-card-buttons { display: none; }
+      .scene-heading {
+        font-size: 1rem;
+        margin-bottom: 5px; /* Tighter spacing */
+      }
+      .description {
+        font-size: 0.8rem;
+      }
+      .top-controls, .bottom-controls, h1, #shared-card-buttons { display: none !important; } /* Force hide buttons */
     }
   </style>
 </head>
