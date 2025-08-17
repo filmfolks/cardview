@@ -64,11 +64,12 @@
     .scene-heading {
       font-size: 1.2rem;
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: 8px; /* Reduced to ~1 line space */
     }
     .description {
       font-size: 1rem;
       flex-grow: 1;
+      margin-top: 0; /* No extra space above */
     }
 
     .top-controls {
@@ -204,6 +205,25 @@
       }
       .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn { display: none !important; } /* Force hide all buttons */
     }
+
+    /* Temporary print-like class for fullscreen image save */
+    .print-like {
+      width: 100% !important;
+      min-height: auto !important;
+      margin: 0 !important;
+      padding: 5px !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: white !important;
+      font-size: 0.7rem !important;
+    }
+    .print-like .scene-heading {
+      font-size: 0.9rem !important;
+      margin-bottom: 3px !important;
+    }
+    .print-like .description {
+      font-size: 0.7rem !important;
+    }
   </style>
 </head>
 <body>
@@ -319,11 +339,16 @@
       });
     }
 
-    // Save active card as JPG
+    // Save active card as JPG (with print-like styling if in fullscreen)
     function saveActiveCardAsJPG() {
       if (!activeCard) {
         alert("Please select a card to edit first.");
         return;
+      }
+      const isFullscreen = document.fullscreenElement === activeCard;
+      let originalClass = activeCard.className;
+      if (isFullscreen) {
+        activeCard.classList.add('print-like'); // Apply temporary print styles
       }
       htmlToImage.toJpeg(activeCard, { quality: 0.95 })
         .then(function (dataUrl) {
@@ -331,9 +356,15 @@
           link.download = 'card.jpg';
           link.href = dataUrl;
           link.click();
+          if (isFullscreen) {
+            activeCard.className = originalClass; // Revert styles
+          }
         })
         .catch(function (error) {
           console.error('Error saving JPG:', error);
+          if (isFullscreen) {
+            activeCard.className = originalClass; // Revert on error
+          }
         });
     }
 
