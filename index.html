@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Screenplay Card View</title>
+  <!-- html-to-image library for JPG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -209,6 +211,9 @@
 
   <div class="top-controls">
     <button id="toggleDarkModeBtn">🌙</button>
+    <button id="toggleNumberBtn">N</button>
+    <button id="saveImageBtn">i</button>
+    <button id="saveTextBtn">T</button>
     <button id="overallFullscreenBtn">⛶</button>
     <button id="printPreviewBtn">P</button>
   </div>
@@ -233,6 +238,9 @@
     const addCardBtn = document.getElementById("addCardBtn");
     const printPreviewBtn = document.getElementById("printPreviewBtn");
     const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
+    const toggleNumberBtn = document.getElementById("toggleNumberBtn");
+    const saveImageBtn = document.getElementById("saveImageBtn");
+    const saveTextBtn = document.getElementById("saveTextBtn");
     const overallFullscreenBtn = document.getElementById("overallFullscreenBtn");
     const sharedButtons = document.getElementById("shared-card-buttons");
     const sharedAddBtn = document.getElementById("shared-add-btn");
@@ -241,6 +249,7 @@
 
     let isDarkMode = false;
     let activeCard = null;
+    let numberingEnabled = false;
 
     function autoResize(textarea) {
       textarea.style.height = 'auto'; // Reset
@@ -295,6 +304,59 @@
       }
     }
 
+    // Toggle numbering prefix on all cards
+    function toggleNumbering() {
+      numberingEnabled = !numberingEnabled;
+      const cards = document.querySelectorAll('.card');
+      cards.forEach((card, index) => {
+        const heading = card.querySelector('.scene-heading');
+        if (numberingEnabled) {
+          heading.value = `${index + 1}. ${heading.value.replace(/^\d+\. ?/, '')}`;
+        } else {
+          heading.value = heading.value.replace(/^\d+\. ?/, '');
+        }
+        autoResize(heading);
+      });
+    }
+
+    // Save active card as JPG
+    function saveActiveCardAsJPG() {
+      if (!activeCard) {
+        alert("Please select a card to edit first.");
+        return;
+      }
+      htmlToImage.toJpeg(activeCard, { quality: 0.95 })
+        .then(function (dataUrl) {
+          const link = document.createElement('a');
+          link.download = 'card.jpg';
+          link.href = dataUrl;
+          link.click();
+        })
+        .catch(function (error) {
+          console.error('Error saving JPG:', error);
+        });
+    }
+
+    // Save all cards as text file with spacing
+    function saveCardsAsText() {
+      const cards = document.querySelectorAll('.card');
+      let textContent = '';
+      cards.forEach(card => {
+        const heading = card.querySelector('.scene-heading').value.trim();
+        const desc = card.querySelector('.description').value.trim();
+        textContent += heading + '\n\n' + desc + '\n\n\n';
+      });
+      const blob = new Blob([textContent], {type: 'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'cards.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     // Event listeners for shared buttons
     sharedAddBtn.addEventListener("click", () => {
       if (activeCard) createCard(true, activeCard);
@@ -333,6 +395,9 @@
       document.body.classList.toggle("dark-mode", isDarkMode);
       toggleDarkModeBtn.textContent = isDarkMode ? "☀️" : "🌙";
     });
+    toggleNumberBtn.addEventListener("click", toggleNumbering);
+    saveImageBtn.addEventListener("click", saveActiveCardAsJPG);
+    saveTextBtn.addEventListener("click", saveCardsAsText);
 
     // Create one card on load and set it active
     createCard(true);
