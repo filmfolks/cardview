@@ -140,6 +140,32 @@
       font-size: 1rem;
     }
 
+    /* Per-card exit fullscreen button */
+    .fullscreen-exit-wrapper {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .fullscreen-exit-btn {
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 1rem;
+      color: black;
+      transition: background 0.3s;
+    }
+    .fullscreen-exit-btn:hover {
+      background-color: #d0d0d0;
+    }
+    body.dark-mode .fullscreen-exit-btn {
+      background-color: #333;
+      color: white;
+    }
+    body.dark-mode .fullscreen-exit-btn:hover {
+      background-color: #444;
+    }
+
     /* 📱 Mobile: Smaller cards for multiple visible, with expansion */
     @media (max-width: 600px) {
       #cards-container {
@@ -198,12 +224,13 @@
       }
       .scene-heading {
         font-size: 0.9rem;
-        margin-bottom: 3px; /* Tighter spacing */
+        margin-bottom: 0.2em !important; /* Minimal space per screenplay rule */
       }
       .description {
         font-size: 0.7rem;
+        margin-top: 0 !important;
       }
-      .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn { display: none !important; } /* Force hide all buttons */
+      .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn, .fullscreen-exit-wrapper { display: none !important; } /* Force hide all buttons */
     }
 
     /* Temporary print-like class for fullscreen image save */
@@ -388,6 +415,24 @@
       URL.revokeObjectURL(url);
     }
 
+    // Create per-card exit fullscreen button
+    function createPerCardExitButton(card) {
+      // Remove existing to avoid duplicates
+      const existingWrapper = card.querySelector('.fullscreen-exit-wrapper');
+      if (existingWrapper) existingWrapper.remove();
+
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('fullscreen-exit-wrapper');
+
+      const exitBtn = document.createElement('button');
+      exitBtn.classList.add('fullscreen-exit-btn');
+      exitBtn.textContent = 'Exit Fullscreen';
+      exitBtn.onclick = () => document.exitFullscreen();
+
+      wrapper.appendChild(exitBtn);
+      card.appendChild(wrapper);
+    }
+
     // Event listeners for shared buttons
     sharedAddBtn.addEventListener("click", () => {
       if (activeCard) createCard(true, activeCard);
@@ -409,13 +454,17 @@
       }
     });
 
-    // Exit fullscreen button logic
+    // Exit fullscreen button logic (overall)
     exitFullscreenBtn.addEventListener("click", () => document.exitFullscreen());
     document.addEventListener("fullscreenchange", () => {
-      if (document.fullscreenElement === document.documentElement) { // Only for overall fullscreen
+      const fsElement = document.fullscreenElement;
+      if (fsElement === document.documentElement) { // Overall fullscreen
         exitFullscreenBtn.style.display = 'block';
-      } else {
+      } else if (fsElement && fsElement.classList.contains('card')) { // Per-card fullscreen
+        createPerCardExitButton(fsElement);
+      } else { // Exited fullscreen
         exitFullscreenBtn.style.display = 'none';
+        document.querySelectorAll('.fullscreen-exit-wrapper').forEach(w => w.remove());
       }
     });
 
