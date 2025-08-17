@@ -1,25 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Screenplay Card View</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; background: #fafafa; color: #000; margin: 0; padding: 0; }
     #cards-container {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: nowrap;
-      align-items: flex-start;
-      width: 100vw;
-      max-width: none;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      width: 98vw;
+      max-width: 1350px;
       margin: 60px auto 0 auto;
-      gap: 0;
       padding: 0 0 16px 0;
-      overflow-x: auto;
-      overflow-y: hidden;
       min-height: 300px;
+      box-sizing: border-box;
     }
     .card {
       background: #fff;
@@ -28,24 +25,37 @@
       box-shadow: none;
       display: flex;
       flex-direction: column;
-      box-sizing: border-box;
-      min-width: 270px;
-      width: 270px;
-      height: 200px;
-      max-height: none;
-      margin: 2px 6px;
-      position: relative;
       font-family: "Courier New", Courier, monospace;
       font-size: 13px;
+      min-height: 170px;
+      height: 200px;
+      aspect-ratio: 1 / 1;
+      margin: 0;
       transition: all 0.13s;
       overflow: hidden;
+      padding: 10px;
     }
-    .scene-heading, .description { font-family: inherit; }
-    .scene-heading { font-weight: bold; font-size: 14px; margin: 0 0 2px 0; line-height: 1.2; padding: 0; }
-    .description { font-size: 13px; margin: 0; line-height: 1.2; padding: 0; flex-grow: 1; }
-    .top-controls {
-      position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 20;
+    .scene-heading, .description { font-family: inherit; background: #fff; color: #000; border: 1px solid #888; padding: 5px; border-radius: 2px; margin-bottom: 6px; }
+    .scene-heading:last-child, .description:last-child { margin-bottom: 0; }
+    .scene-heading {
+      font-weight: bold;
+      font-size: 14px;
+      margin: 0 0 6px 0;
+      line-height: 1.2;
+      padding: 5px;
+      resize: none;
+      outline: none;
     }
+    .description {
+      font-size: 13px;
+      margin: 0;
+      line-height: 1.2;
+      padding: 5px;
+      flex-grow: 1;
+      resize: none;
+      outline: none;
+    }
+    .top-controls { position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 20; }
     .top-controls button { width: 32px; height: 32px; font-size: 16px; }
     .bottom-controls { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; z-index: 10; }
     button { font-size: 1.2rem; padding: 8px 12px; cursor: pointer; border: none; border-radius: 5px; background-color: #e0e0e0; color: black; }
@@ -56,12 +66,17 @@
     .fullscreen-exit-btn { background-color: #e0e0e0; border-radius: 5px; border: none; padding: 8px 12px; cursor: pointer; font-size: 1rem; color: black; transition: background 0.3s; }
     .fullscreen-exit-btn:hover { background-color: #d0d0d0; }
     body.dark-mode { background: #121212; color: #f0f0f0; }
-    body.dark-mode .card { background: #1e1e1e; border-color: #555; }
+    body.dark-mode .card { background: #232326 !important; }
+    body.dark-mode .scene-heading, body.dark-mode .description {
+      background: #232326 !important;
+      color: #fff !important;
+      border: 1px solid #444 !important;
+    }
     body.dark-mode button { background-color: #333; color: white; }
     body.dark-mode button:hover { background-color: #444; }
     body.dark-mode .fullscreen-exit-btn { background-color: #333; color: white; }
     body.dark-mode .fullscreen-exit-btn:hover { background-color: #444; }
-    /* ZOOM LEVEL CLASSES */
+    /* ZOOM LEVEL CLASSES: Cards grow square! */
     .zoom-1 { font-size: 13px; height: 200px;}
     .zoom-1 .scene-heading { font-size: 14px;}
     .zoom-2 { font-size: 17px; height: 260px;}
@@ -70,17 +85,35 @@
     .zoom-3 .scene-heading { font-size: 22px;}
     .zoom-4 { font-size: 26px; height: 440px;}
     .zoom-4 .scene-heading { font-size: 27px;}
-    .card.zoom-1 { min-width: 270px; width: 270px; }
-    .card.zoom-2 { min-width: 360px; width: 360px; }
-    .card.zoom-3 { min-width: 480px; width: 480px; }
-    .card.zoom-4 { min-width: 610px; width: 610px; }
+    .card.zoom-1 { min-height:170px; height:200px; }
+    .card.zoom-2 { min-height:220px; height:260px;}
+    .card.zoom-3 { min-height:300px; height:340px;}
+    .card.zoom-4 { min-height:390px; height:440px;}
+    @media (max-width:1100px){#cards-container{grid-template-columns:repeat(2, 1fr);}}
+    @media (max-width:700px){#cards-container{grid-template-columns:repeat(1, 1fr);}}
     @media print {
-      #cards-container { flex-wrap: wrap !important; overflow: visible !important; }
-      .card { font-size: 11px !important; width: 24% !important; min-width: 0 !important; height: auto !important; }
-      .scene-heading { font-size: 12px !important; }
+      #cards-container { grid-template-columns: repeat(4, 1fr) !important; gap: 3px !important; }
+      .card {
+        height: auto !important;
+        aspect-ratio: 1 / 1 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: white !important;
+        padding: 10px 7px 8px 10px !important;
+        margin: 0 !important;
+      }
+      .scene-heading, .description {
+        display: block !important;
+        border: 1px solid #888 !important;
+        color: #000 !important;
+        background: #fff !important;
+      }
       .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn, .fullscreen-exit-wrapper {
         display: none !important;
       }
+    }
+    @media only screen and (max-width: 600px) {
+      .bottom-controls { display: none !important; }
     }
   </style>
 </head>
@@ -103,7 +136,6 @@
 </div>
 <button id="exit-fullscreen-btn">Exit Fullscreen</button>
 <script>
-  // Controls and state
   const cardsContainer = document.getElementById("cards-container");
   const zoomInBtn = document.getElementById("zoomInBtn");
   const zoomOutBtn = document.getElementById("zoomOutBtn");
@@ -248,10 +280,7 @@
   }
   zoomInBtn.addEventListener('click', () => { if (zoomLevel < 4) { zoomLevel++; updateZoomClass(); } });
   zoomOutBtn.addEventListener('click', () => { if (zoomLevel > 1) { zoomLevel--; updateZoomClass(); } });
-  // Initial zoom
   updateZoomClass();
-
-  // Start with one editable card
   createCard(true);
 </script>
 </body>
