@@ -26,34 +26,42 @@
       display: flex;
       flex-direction: column;
       font-family: "Courier New", Courier, monospace;
-      font-size: 13px;
-      min-height: 170px;
-      height: 200px;
+      font-size: 14px;
+      min-height: 80px;
+      height: auto;
       aspect-ratio: 1 / 1;
       margin: 0;
       transition: all 0.13s;
       overflow: hidden;
       padding: 10px;
     }
-    .scene-heading, .description { font-family: inherit; background: #fff; color: #000; border: 1px solid #888; padding: 5px; border-radius: 2px; margin-bottom: 6px; }
-    .scene-heading:last-child, .description:last-child { margin-bottom: 0; }
+    .scene-heading, .description {
+      font-family: inherit;
+      color: #000;
+      border: 1px solid #888;
+      border-radius: 2px;
+      padding: 5px 6px;
+      margin-bottom: 6px;
+      font-size: 14px;
+      resize: none;
+      outline: none;
+      background: #fff;
+      transition: border 0.15s;
+      box-sizing: border-box;
+    }
     .scene-heading {
       font-weight: bold;
-      font-size: 14px;
-      margin: 0 0 6px 0;
-      line-height: 1.2;
-      padding: 5px;
-      resize: none;
-      outline: none;
+      min-height: 1.1em;
+      max-height: 2.3em;
+      overflow-y: auto;
+      margin-bottom: 6px;
     }
     .description {
-      font-size: 13px;
-      margin: 0;
-      line-height: 1.2;
-      padding: 5px;
       flex-grow: 1;
-      resize: none;
-      outline: none;
+      min-height: 4.4em;  /* Four lines */
+      margin-bottom: 0;
+      overflow-y: hidden;
+      /* will expand as needed */
     }
     .top-controls { position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 20; }
     .top-controls button { width: 32px; height: 32px; font-size: 16px; }
@@ -76,19 +84,15 @@
     body.dark-mode button:hover { background-color: #444; }
     body.dark-mode .fullscreen-exit-btn { background-color: #333; color: white; }
     body.dark-mode .fullscreen-exit-btn:hover { background-color: #444; }
-    /* ZOOM LEVEL CLASSES: Cards grow square! */
-    .zoom-1 { font-size: 13px; height: 200px;}
-    .zoom-1 .scene-heading { font-size: 14px;}
-    .zoom-2 { font-size: 17px; height: 260px;}
-    .zoom-2 .scene-heading { font-size: 18px;}
-    .zoom-3 { font-size: 21px; height: 340px;}
-    .zoom-3 .scene-heading { font-size: 22px;}
-    .zoom-4 { font-size: 26px; height: 440px;}
-    .zoom-4 .scene-heading { font-size: 27px;}
-    .card.zoom-1 { min-height:170px; height:200px; }
-    .card.zoom-2 { min-height:220px; height:260px;}
-    .card.zoom-3 { min-height:300px; height:340px;}
-    .card.zoom-4 { min-height:390px; height:440px;}
+    /* ZOOM LEVEL CLASSES for uniformly scaling cards as squares */
+    .zoom-1 { font-size: 14px; }
+    .zoom-2 { font-size: 18px; }
+    .zoom-3 { font-size: 22px; }
+    .zoom-4 { font-size: 27px; }
+    .card.zoom-1 { min-height: 80px; }
+    .card.zoom-2 { min-height: 110px; }
+    .card.zoom-3 { min-height: 160px; }
+    .card.zoom-4 { min-height: 220px; }
     @media (max-width:1100px){#cards-container{grid-template-columns:repeat(2, 1fr);}}
     @media (max-width:700px){#cards-container{grid-template-columns:repeat(1, 1fr);}}
     @media print {
@@ -108,9 +112,7 @@
         color: #000 !important;
         background: #fff !important;
       }
-      .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn, .fullscreen-exit-wrapper {
-        display: none !important;
-      }
+      .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn, .fullscreen-exit-wrapper {display:none !important;}
     }
     @media only screen and (max-width: 600px) {
       .bottom-controls { display: none !important; }
@@ -152,9 +154,37 @@
   const exitFullscreenBtn = document.getElementById("exit-fullscreen-btn");
   let isDarkMode = false, activeCard = null, numberingEnabled = false, zoomLevel = 1;
 
-  function autoResize(textarea) {
-    textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
+  // Auto-resize logic with limits for heading/description
+  function updateCardSizes() {
+    document.querySelectorAll('.card').forEach(card => {
+      const heading = card.querySelector('.scene-heading');
+      const desc = card.querySelector('.description');
+      if (!heading || !desc) return;
+
+      // Heading: 1 line default, extends to 2 lines max, then scrolls
+      heading.style.height = 'auto';
+      heading.style.overflowY = 'auto';
+      const headingLine = parseFloat(getComputedStyle(heading).lineHeight) || 20;
+      const headingMaxHeight = headingLine * 2;
+      heading.style.height = `${Math.min(heading.scrollHeight, headingMaxHeight)}px`;
+
+      // Description: 4 lines default, expands as user types more (never scrolls)
+      const descLine = parseFloat(getComputedStyle(desc).lineHeight) || 20;
+      desc.style.height = 'auto';
+      if (desc.scrollHeight > desc.clientHeight) {
+        desc.style.height = desc.scrollHeight + 'px';
+      } else {
+        desc.style.height = (descLine * 4) + 'px';
+      }
+      // Both have same font size
+      desc.style.fontSize = heading.style.fontSize = getComputedStyle(card).fontSize;
+    });
+  }
+  function attachInputsListeners() {
+    document.querySelectorAll('.scene-heading, .description').forEach(el => {
+      el.removeEventListener('input', updateCardSizes);
+      el.addEventListener('input', updateCardSizes);
+    });
   }
   function setActiveCard(card) {
     if (activeCard === card) return;
@@ -170,17 +200,21 @@
     const sceneHeading = document.createElement("textarea");
     sceneHeading.classList.add("scene-heading");
     sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
-    sceneHeading.addEventListener('input', () => autoResize(sceneHeading));
+    sceneHeading.rows = 1;
+    sceneHeading.style.overflowY = "auto";
+    sceneHeading.addEventListener('input', updateCardSizes);
     sceneHeading.addEventListener('focus', () => setActiveCard(card));
     const description = document.createElement("textarea");
     description.classList.add("description");
     description.placeholder = "Description / Action Lines";
-    description.addEventListener('input', () => autoResize(description));
+    description.rows = 4;
+    description.addEventListener('input', updateCardSizes);
     description.addEventListener('focus', () => setActiveCard(card));
     card.appendChild(sceneHeading); card.appendChild(description);
     if (insertAfter) insertAfter.after(card); else cardsContainer.appendChild(card);
     updateZoomClass();
-    autoResize(sceneHeading); autoResize(description);
+    attachInputsListeners();
+    updateCardSizes();
     if (makeActive) { card.scrollIntoView({ behavior: "smooth", block: "nearest" }); sceneHeading.focus(); setActiveCard(card); }
   }
   function toggleNumbering() {
@@ -193,7 +227,7 @@
       } else {
         heading.value = heading.value.replace(/^\d+\. ?/, '');
       }
-      autoResize(heading);
+      updateCardSizes();
     });
   }
   function saveActiveCardAsJPG() {
@@ -277,11 +311,16 @@
       for(let i=1; i<=4; i++) card.classList.remove('zoom-'+i);
       card.classList.add('zoom-'+zoomLevel);
     });
+    updateCardSizes();
   }
   zoomInBtn.addEventListener('click', () => { if (zoomLevel < 4) { zoomLevel++; updateZoomClass(); } });
   zoomOutBtn.addEventListener('click', () => { if (zoomLevel > 1) { zoomLevel--; updateZoomClass(); } });
-  updateZoomClass();
+
+  // On start/setup
   createCard(true);
+  attachInputsListeners();
+  updateCardSizes();
 </script>
 </body>
 </html>
+
