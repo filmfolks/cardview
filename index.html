@@ -15,6 +15,10 @@
       padding: 0;
       transition: background 0.3s, color 0.3s;
     }
+    #zoom-wrapper {
+      transition: transform 0.2s;
+      transform-origin: top left;
+    }
     body.dark-mode {
       background: #121212;
       color: #f0f0f0;
@@ -167,9 +171,11 @@
       html, body { overflow-y: scroll; }
       #shared-card-buttons { margin-bottom: 20px; }
     }
-    /* Print View - Main index card look */
     @media print {
       body { background: #fff; color: #000; }
+      #zoom-wrapper {
+        transform: none !important;
+      }
       #cards-container {
         display: flex;
         flex-wrap: wrap;
@@ -252,6 +258,8 @@
 <body>
   <h1>Screenplay Card View</h1>
   <div class="top-controls">
+    <button id="zoomInBtn">+</button>
+    <button id="zoomOutBtn">-</button>
     <button id="toggleDarkModeBtn">🌙</button>
     <button id="toggleNumberBtn">N</button>
     <button id="saveImageBtn">i</button>
@@ -259,7 +267,9 @@
     <button id="overallFullscreenBtn">⛶</button>
     <button id="printPreviewBtn">P</button>
   </div>
-  <div id="cards-container"></div>
+  <div id="zoom-wrapper">
+    <div id="cards-container"></div>
+  </div>
   <div class="bottom-controls">
     <button id="addCardBtn">+</button>
   </div>
@@ -269,7 +279,10 @@
   </div>
   <button id="exit-fullscreen-btn">Exit Fullscreen</button>
   <script>
+    const zoomWrapper = document.getElementById("zoom-wrapper");
     const cardsContainer = document.getElementById("cards-container");
+    const zoomInBtn = document.getElementById("zoomInBtn");
+    const zoomOutBtn = document.getElementById("zoomOutBtn");
     const addCardBtn = document.getElementById("addCardBtn");
     const printPreviewBtn = document.getElementById("printPreviewBtn");
     const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
@@ -284,6 +297,7 @@
     let isDarkMode = false;
     let activeCard = null;
     let numberingEnabled = false;
+    let zoomLevel = 1.0;
     function autoResize(textarea) {
       textarea.style.height = 'auto';
       textarea.style.height = `${textarea.scrollHeight}px`;
@@ -434,6 +448,15 @@
     toggleNumberBtn.addEventListener("click", toggleNumbering);
     saveImageBtn.addEventListener("click", saveActiveCardAsJPG);
     saveTextBtn.addEventListener("click", saveCardsAsText);
+    // Zoom In and Out logic
+    zoomInBtn.addEventListener('click', () => {
+      zoomLevel = Math.min(zoomLevel + 0.1, 2);
+      zoomWrapper.style.transform = `scale(${zoomLevel})`;
+    });
+    zoomOutBtn.addEventListener('click', () => {
+      zoomLevel = Math.max(zoomLevel - 0.1, 0.5);
+      zoomWrapper.style.transform = `scale(${zoomLevel})`;
+    });
     createCard(true);
   </script>
 </body>
