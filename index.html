@@ -125,6 +125,18 @@
       margin-top: 10px; /* Space below the card */
     }
 
+    /* Exit fullscreen button */
+    #exit-fullscreen-btn {
+      display: none; /* Hidden by default */
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+
     /* 📱 Mobile: Smaller cards for multiple visible, with expansion */
     @media (max-width: 600px) {
       #cards-container {
@@ -160,7 +172,7 @@
       }
     }
 
-    /* 🖨 Print styles - Compact for paper saving, at least 4 per row */
+    /* 🖨 Print styles - Compact for paper saving, exactly 4 per row */
     @media print {
       body { background: #fff; color: #000; }
       #cards-container {
@@ -171,7 +183,7 @@
         padding: 0;
       }
       .card {
-        width: 23%; /* Reduced for ~4 per row on A4 */
+        width: 24%; /* Reduced for exactly 4 per row on A4 */
         min-height: auto;
         margin: 2px; /* Minimal margins */
         padding: 5px; /* Reduced padding */
@@ -179,16 +191,16 @@
         box-shadow: none;
         background: white;
         page-break-inside: avoid; /* Prevent breaking cards across pages */
-        font-size: 0.8rem; /* Smaller text to fit more */
+        font-size: 0.7rem; /* Even smaller text to fit more */
       }
       .scene-heading {
-        font-size: 1rem;
-        margin-bottom: 5px; /* Tighter spacing */
+        font-size: 0.9rem;
+        margin-bottom: 3px; /* Tighter spacing */
       }
       .description {
-        font-size: 0.8rem;
+        font-size: 0.7rem;
       }
-      .top-controls, .bottom-controls, h1, #shared-card-buttons { display: none !important; } /* Force hide buttons */
+      .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn { display: none !important; } /* Force hide all buttons */
     }
   </style>
 </head>
@@ -197,6 +209,7 @@
 
   <div class="top-controls">
     <button id="toggleDarkModeBtn">🌙</button>
+    <button id="overallFullscreenBtn">⛶</button>
     <button id="printPreviewBtn">P</button>
   </div>
 
@@ -212,14 +225,19 @@
     <button id="shared-fullscreen-btn">[]</button>
   </div>
 
+  <!-- Exit fullscreen button -->
+  <button id="exit-fullscreen-btn">Exit Fullscreen</button>
+
   <script>
     const cardsContainer = document.getElementById("cards-container");
     const addCardBtn = document.getElementById("addCardBtn");
     const printPreviewBtn = document.getElementById("printPreviewBtn");
     const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
+    const overallFullscreenBtn = document.getElementById("overallFullscreenBtn");
     const sharedButtons = document.getElementById("shared-card-buttons");
     const sharedAddBtn = document.getElementById("shared-add-btn");
     const sharedFullscreenBtn = document.getElementById("shared-fullscreen-btn");
+    const exitFullscreenBtn = document.getElementById("exit-fullscreen-btn");
 
     let isDarkMode = false;
     let activeCard = null;
@@ -283,9 +301,28 @@
     });
     sharedFullscreenBtn.addEventListener("click", () => {
       if (activeCard && !document.fullscreenElement) {
-        activeCard.requestFullscreen(); // Fullscreen only this card
+        activeCard.requestFullscreen(); // Per-card fullscreen
       } else {
         document.exitFullscreen();
+      }
+    });
+
+    // Overall fullscreen
+    overallFullscreenBtn.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Exit fullscreen button logic
+    exitFullscreenBtn.addEventListener("click", () => document.exitFullscreen());
+    document.addEventListener("fullscreenchange", () => {
+      if (document.fullscreenElement === document.documentElement) { // Only for overall fullscreen
+        exitFullscreenBtn.style.display = 'block';
+      } else {
+        exitFullscreenBtn.style.display = 'none';
       }
     });
 
