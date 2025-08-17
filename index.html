@@ -19,7 +19,6 @@
       background: #121212;
       color: #f0f0f0;
     }
-
     #cards-container {
       display: flex;
       flex-direction: column;
@@ -29,27 +28,27 @@
       gap: 20px;
       padding: 16px;
     }
-
     .card {
       background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 15px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      border: 1px solid #888;
+      border-radius: 2px;
+      padding: 12px 10px;
+      box-shadow: none;
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
       width: 100%;
-      min-height: 300px;
-      height: auto; /* Allow dynamic expansion */
-      position: relative; /* For positioning */
+      min-height: 160px;
+      height: auto;
+      position: relative;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 13px;
+      margin: 0;
     }
     body.dark-mode .card {
       background: #1e1e1e;
       border-color: #555;
-      box-shadow: 0 2px 5px rgba(255,255,255,0.05);
     }
-
     .scene-heading,
     .description {
       border: none;
@@ -58,20 +57,28 @@
       color: inherit;
       resize: none;
       width: 100%;
-      min-height: 30px; /* Starting height */
-      overflow: hidden; /* Hide internal scroll */
+      min-height: 20px;
+      overflow: hidden;
+      font-family: inherit;
     }
     .scene-heading {
-      font-size: 1.2rem;
       font-weight: bold;
-      margin-bottom: 8px; /* Reduced to ~1 line space */
+      font-size: 14px;
+      margin: 0 0 2px 0;
+      line-height: 1.2;
+      padding: 0;
+      background: transparent;
+      border: none;
     }
     .description {
-      font-size: 1rem;
+      font-size: 13px;
+      margin: 0;
+      line-height: 1.2;
+      padding: 0;
+      background: transparent;
+      border: none;
       flex-grow: 1;
-      margin-top: 0; /* No extra space above */
     }
-
     .top-controls {
       position: fixed;
       top: 10px;
@@ -81,7 +88,7 @@
       z-index: 20;
     }
     .top-controls button {
-      width: 32px; /* Small size */
+      width: 32px;
       height: 32px;
       font-size: 16px;
       padding: 0;
@@ -98,39 +105,34 @@
       justify-content: center;
       z-index: 10;
     }
-
     button {
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       padding: 8px 12px;
       cursor: pointer;
       border: none;
       border-radius: 5px;
-      background-color: #e0e0e0; /* Simple light gray */
-      color: black; /* Black text in normal mode */
+      background-color: #e0e0e0;
+      color: black;
       transition: background 0.3s;
     }
     button:hover {
-      background-color: #d0d0d0; /* Subtle hover */
+      background-color: #d0d0d0;
     }
     body.dark-mode button {
-      background-color: #333; /* Dark gray */
-      color: white; /* Light text in dark mode */
+      background-color: #333;
+      color: white;
     }
     body.dark-mode button:hover {
       background-color: #444;
     }
-
-    /* Card-specific buttons (add and fullscreen) */
     #shared-card-buttons {
-      display: none; /* Hidden by default */
+      display: none;
       justify-content: center;
       gap: 10px;
-      margin-top: 10px; /* Space below the card */
+      margin-top: 10px;
     }
-
-    /* Exit fullscreen button */
     #exit-fullscreen-btn {
-      display: none; /* Hidden by default */
+      display: none;
       position: fixed;
       bottom: 20px;
       left: 50%;
@@ -139,8 +141,6 @@
       padding: 10px 20px;
       font-size: 1rem;
     }
-
-    /* Per-card exit fullscreen button */
     .fullscreen-exit-wrapper {
       text-align: center;
       margin-top: 10px;
@@ -155,107 +155,102 @@
       color: black;
       transition: background 0.3s;
     }
-    .fullscreen-exit-btn:hover {
-      background-color: #d0d0d0;
-    }
-    body.dark-mode .fullscreen-exit-btn {
-      background-color: #333;
-      color: white;
-    }
-    body.dark-mode .fullscreen-exit-btn:hover {
-      background-color: #444;
-    }
-
-    /* 📱 Mobile: Smaller cards for multiple visible, with expansion */
+    .fullscreen-exit-btn:hover { background-color: #d0d0d0; }
+    body.dark-mode .fullscreen-exit-btn { background-color: #333; color: white; }
+    body.dark-mode .fullscreen-exit-btn:hover { background-color: #444; }
     @media (max-width: 600px) {
-      #cards-container {
-        gap: 0; /* Adjust gap to account for buttons below */
-        padding: 0;
-        margin: 0;
-        padding-top: 50px; /* Extra space for top-controls */
-      }
-      .card {
-        width: 100vw;
-        min-height: 150px; /* Reduced size */
-        height: auto; /* Grow with content */
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        margin: 10px 0; /* Space for buttons */
-        padding: 16px;
-        padding-top: 20px; /* Push content below top buttons */
-      }
-      h1 {
-        display: none; /* Hide header on mobile */
-      }
-      .bottom-controls {
-        display: none; /* Hide fixed bottom on mobile */
-      }
-      .top-controls {
-        top: 5px; /* Above the page */
-      }
-      html, body {
-        overflow-y: scroll; /* Smooth vertical scrolling */
-      }
-      #shared-card-buttons {
-        margin-bottom: 20px; /* Extra space after buttons on mobile */
-      }
+      #cards-container { gap: 0; padding: 0; margin: 0; padding-top: 50px; }
+      .card { width: 100vw; min-height: 120px; height: auto; margin: 10px 0; padding: 12px 10px; }
+      h1 { display: none; }
+      .bottom-controls { display: none; }
+      .top-controls { top: 5px; }
+      html, body { overflow-y: scroll; }
+      #shared-card-buttons { margin-bottom: 20px; }
     }
-
-    /* 🖨 Print styles - Compact for paper saving, exactly 4 per row */
+    /* Print View - Main index card look */
     @media print {
       body { background: #fff; color: #000; }
       #cards-container {
-        flex-direction: row;
+        display: flex;
         flex-wrap: wrap;
-        gap: 0; /* No gaps */
+        flex-direction: row;
+        gap: 0;
         margin: 0;
         padding: 0;
       }
       .card {
-        width: 24%; /* Reduced for exactly 4 per row on A4 */
-        min-height: auto;
-        margin: 2px; /* Minimal margins */
-        padding: 5px; /* Reduced padding */
-        border: none;
-        box-shadow: none;
-        background: white;
-        page-break-inside: avoid; /* Prevent breaking cards across pages */
-        font-size: 0.7rem; /* Even smaller text to fit more */
+        width: 24%;
+        min-width: 0;
+        min-height: 120px;
+        margin: 2px 1px;
+        padding: 7px 6px 5px 8px;
+        border: 1px solid #888 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: white !important;
+        page-break-inside: avoid;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 11px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
       }
       .scene-heading {
-        font-size: 0.9rem;
-        margin-bottom: 0.2em !important; /* Minimal space per screenplay rule */
+        font-weight: bold !important;
+        font-size: 12px !important;
+        margin-bottom: 2px !important;
+        line-height: 1.1 !important;
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        padding: 0 !important;
+        resize: none !important;
+        font-family: inherit !important;
       }
       .description {
-        font-size: 0.7rem;
-        margin-top: 0 !important;
+        font-size: 11px !important;
+        margin: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        padding: 0 !important;
+        resize: none !important;
+        font-family: inherit !important;
+        line-height: 1.1 !important;
       }
-      .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn, .fullscreen-exit-wrapper { display: none !important; } /* Force hide all buttons */
+      .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn, .fullscreen-exit-wrapper {
+        display: none !important;
+      }
     }
-
-    /* Temporary print-like class for fullscreen image save */
     .print-like {
       width: 100% !important;
       min-height: auto !important;
       margin: 0 !important;
-      padding: 5px !important;
-      border: none !important;
+      padding: 7px 6px 5px 8px !important;
+      border: 1px solid #888 !important;
+      border-radius: 0 !important;
       box-shadow: none !important;
       background: white !important;
-      font-size: 0.7rem !important;
+      font-family: "Courier New", Courier, monospace !important;
+      font-size: 11px !important;
     }
     .print-like .scene-heading {
-      font-size: 0.9rem !important;
-      margin-bottom: 3px !important;
+      font-weight: bold !important;
+      font-size: 12px !important;
+      margin-bottom: 2px !important;
+      line-height: 1.1 !important;
+      font-family: inherit !important;
     }
     .print-like .description {
-      font-size: 0.7rem !important;
+      font-size: 11px !important;
+      margin: 0 !important;
+      font-family: inherit !important;
+      line-height: 1.1 !important;
     }
   </style>
 </head>
 <body>
   <h1>Screenplay Card View</h1>
-
   <div class="top-controls">
     <button id="toggleDarkModeBtn">🌙</button>
     <button id="toggleNumberBtn">N</button>
@@ -264,22 +259,15 @@
     <button id="overallFullscreenBtn">⛶</button>
     <button id="printPreviewBtn">P</button>
   </div>
-
   <div id="cards-container"></div>
-
   <div class="bottom-controls">
     <button id="addCardBtn">+</button>
   </div>
-
-  <!-- Shared buttons div (moves dynamically) -->
   <div id="shared-card-buttons">
     <button id="shared-add-btn">+</button>
     <button id="shared-fullscreen-btn">[]</button>
   </div>
-
-  <!-- Exit fullscreen button -->
   <button id="exit-fullscreen-btn">Exit Fullscreen</button>
-
   <script>
     const cardsContainer = document.getElementById("cards-container");
     const addCardBtn = document.getElementById("addCardBtn");
@@ -293,65 +281,50 @@
     const sharedAddBtn = document.getElementById("shared-add-btn");
     const sharedFullscreenBtn = document.getElementById("shared-fullscreen-btn");
     const exitFullscreenBtn = document.getElementById("exit-fullscreen-btn");
-
     let isDarkMode = false;
     let activeCard = null;
     let numberingEnabled = false;
-
     function autoResize(textarea) {
-      textarea.style.height = 'auto'; // Reset
-      textarea.style.height = `${textarea.scrollHeight}px`; // Expand to fit content
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
     }
-
     function setActiveCard(card) {
       if (activeCard === card) return;
       activeCard = card;
-      sharedButtons.style.display = 'none'; // Hide first
+      sharedButtons.style.display = 'none';
       if (activeCard) {
-        activeCard.after(sharedButtons); // Move buttons below the active card
+        activeCard.after(sharedButtons);
         sharedButtons.style.display = 'flex';
       }
     }
-
     function createCard(makeActive = true, insertAfter = null) {
       const card = document.createElement("div");
       card.classList.add("card");
-
       const sceneHeading = document.createElement("textarea");
       sceneHeading.classList.add("scene-heading");
       sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
-      sceneHeading.addEventListener('input', () => autoResize(sceneHeading)); // Auto-expand on type
+      sceneHeading.addEventListener('input', () => autoResize(sceneHeading));
       sceneHeading.addEventListener('focus', () => setActiveCard(card));
-
       const description = document.createElement("textarea");
       description.classList.add("description");
       description.placeholder = "Description / Action Lines";
-      description.addEventListener('input', () => autoResize(description)); // Auto-expand on type
+      description.addEventListener('input', () => autoResize(description));
       description.addEventListener('focus', () => setActiveCard(card));
-
       card.appendChild(sceneHeading);
       card.appendChild(description);
-
-      // Insert card
       if (insertAfter) {
         insertAfter.after(card);
       } else {
         cardsContainer.appendChild(card);
       }
-
-      // Initial resize
       autoResize(sceneHeading);
       autoResize(description);
-
       if (makeActive) {
-        // Scroll to the new card and set it active
         card.scrollIntoView({ behavior: "smooth", block: "start" });
         sceneHeading.focus();
         setActiveCard(card);
       }
     }
-
-    // Toggle numbering prefix on all cards
     function toggleNumbering() {
       numberingEnabled = !numberingEnabled;
       const cards = document.querySelectorAll('.card');
@@ -365,8 +338,6 @@
         autoResize(heading);
       });
     }
-
-    // Save active card as JPG (with print-like styling if in fullscreen)
     function saveActiveCardAsJPG() {
       if (!activeCard) {
         alert("Please select a card to edit first.");
@@ -375,7 +346,7 @@
       const isFullscreen = document.fullscreenElement === activeCard;
       let originalClass = activeCard.className;
       if (isFullscreen) {
-        activeCard.classList.add('print-like'); // Apply temporary print styles
+        activeCard.classList.add('print-like');
       }
       htmlToImage.toJpeg(activeCard, { quality: 0.95 })
         .then(function (dataUrl) {
@@ -384,18 +355,16 @@
           link.href = dataUrl;
           link.click();
           if (isFullscreen) {
-            activeCard.className = originalClass; // Revert styles
+            activeCard.className = originalClass;
           }
         })
         .catch(function (error) {
           console.error('Error saving JPG:', error);
           if (isFullscreen) {
-            activeCard.className = originalClass; // Revert on error
+            activeCard.className = originalClass;
           }
         });
     }
-
-    // Save all cards as text file with spacing
     function saveCardsAsText() {
       const cards = document.querySelectorAll('.card');
       let textContent = '';
@@ -414,38 +383,28 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
-
-    // Create per-card exit fullscreen button
     function createPerCardExitButton(card) {
-      // Remove existing to avoid duplicates
       const existingWrapper = card.querySelector('.fullscreen-exit-wrapper');
       if (existingWrapper) existingWrapper.remove();
-
       const wrapper = document.createElement('div');
       wrapper.classList.add('fullscreen-exit-wrapper');
-
       const exitBtn = document.createElement('button');
       exitBtn.classList.add('fullscreen-exit-btn');
       exitBtn.textContent = 'Exit Fullscreen';
       exitBtn.onclick = () => document.exitFullscreen();
-
       wrapper.appendChild(exitBtn);
       card.appendChild(wrapper);
     }
-
-    // Event listeners for shared buttons
     sharedAddBtn.addEventListener("click", () => {
       if (activeCard) createCard(true, activeCard);
     });
     sharedFullscreenBtn.addEventListener("click", () => {
       if (activeCard && !document.fullscreenElement) {
-        activeCard.requestFullscreen(); // Per-card fullscreen
+        activeCard.requestFullscreen();
       } else {
         document.exitFullscreen();
       }
     });
-
-    // Overall fullscreen
     overallFullscreenBtn.addEventListener("click", () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
@@ -453,21 +412,18 @@
         document.exitFullscreen();
       }
     });
-
-    // Exit fullscreen button logic (overall)
     exitFullscreenBtn.addEventListener("click", () => document.exitFullscreen());
     document.addEventListener("fullscreenchange", () => {
       const fsElement = document.fullscreenElement;
-      if (fsElement === document.documentElement) { // Overall fullscreen
+      if (fsElement === document.documentElement) {
         exitFullscreenBtn.style.display = 'block';
-      } else if (fsElement && fsElement.classList.contains('card')) { // Per-card fullscreen
+      } else if (fsElement && fsElement.classList.contains('card')) {
         createPerCardExitButton(fsElement);
-      } else { // Exited fullscreen
+      } else {
         exitFullscreenBtn.style.display = 'none';
         document.querySelectorAll('.fullscreen-exit-wrapper').forEach(w => w.remove());
       }
     });
-
     addCardBtn.addEventListener("click", () => createCard(true));
     printPreviewBtn.addEventListener("click", () => window.print());
     toggleDarkModeBtn.addEventListener("click", () => {
@@ -478,8 +434,6 @@
     toggleNumberBtn.addEventListener("click", toggleNumbering);
     saveImageBtn.addEventListener("click", saveActiveCardAsJPG);
     saveTextBtn.addEventListener("click", saveCardsAsText);
-
-    // Create one card on load and set it active
     createCard(true);
   </script>
 </body>
