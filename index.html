@@ -46,22 +46,24 @@
       resize: none;
       outline: none;
       background: #fff;
-      transition: border 0.15s;
       box-sizing: border-box;
+      transition: border 0.15s;
     }
     .scene-heading {
       font-weight: bold;
-      min-height: 1.1em;
-      max-height: 2.3em;
-      overflow-y: auto;
+      min-height: 1.2em;
+      max-height: 2.6em;
       margin-bottom: 6px;
+      line-height: 1.2;
+      overflow-y: auto;
     }
     .description {
       flex-grow: 1;
-      min-height: 4.4em;  /* Four lines */
+      min-height: 4.8em;  /* Four lines */
+      max-height: none;
       margin-bottom: 0;
       overflow-y: hidden;
-      /* will expand as needed */
+      line-height: 1.2;
     }
     .top-controls { position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 20; }
     .top-controls button { width: 32px; height: 32px; font-size: 16px; }
@@ -84,7 +86,7 @@
     body.dark-mode button:hover { background-color: #444; }
     body.dark-mode .fullscreen-exit-btn { background-color: #333; color: white; }
     body.dark-mode .fullscreen-exit-btn:hover { background-color: #444; }
-    /* ZOOM LEVEL CLASSES for uniformly scaling cards as squares */
+    /* ZOOM LEVEL CLASSES for scaling cards as squares */
     .zoom-1 { font-size: 14px; }
     .zoom-2 { font-size: 18px; }
     .zoom-3 { font-size: 22px; }
@@ -98,7 +100,9 @@
     @media print {
       #cards-container { grid-template-columns: repeat(4, 1fr) !important; gap: 3px !important; }
       .card {
-        height: auto !important;
+        height: 220px !important;
+        min-height: 220px !important;
+        max-height: 220px !important;
         aspect-ratio: 1 / 1 !important;
         border: none !important;
         box-shadow: none !important;
@@ -111,7 +115,10 @@
         border: 1px solid #888 !important;
         color: #000 !important;
         background: #fff !important;
+        font-size: 13px !important;
       }
+      .scene-heading { min-height: 1.2em !important; max-height: 2.6em !important; }
+      .description { min-height: 4.8em !important; }
       .top-controls, .bottom-controls, h1, #shared-card-buttons, #exit-fullscreen-btn, .fullscreen-exit-wrapper {display:none !important;}
     }
     @media only screen and (max-width: 600px) {
@@ -154,36 +161,44 @@
   const exitFullscreenBtn = document.getElementById("exit-fullscreen-btn");
   let isDarkMode = false, activeCard = null, numberingEnabled = false, zoomLevel = 1;
 
-  // Auto-resize logic with limits for heading/description
-  function updateCardSizes() {
+  // Initial sizing logic: 1 line heading, 4 line description by default, both can grow while typing
+  function enforceInitialSizes() {
     document.querySelectorAll('.card').forEach(card => {
       const heading = card.querySelector('.scene-heading');
       const desc = card.querySelector('.description');
       if (!heading || !desc) return;
-
-      // Heading: 1 line default, extends to 2 lines max, then scrolls
-      heading.style.height = 'auto';
-      heading.style.overflowY = 'auto';
-      const headingLine = parseFloat(getComputedStyle(heading).lineHeight) || 20;
-      const headingMaxHeight = headingLine * 2;
-      heading.style.height = `${Math.min(heading.scrollHeight, headingMaxHeight)}px`;
-
-      // Description: 4 lines default, expands as user types more (never scrolls)
-      const descLine = parseFloat(getComputedStyle(desc).lineHeight) || 20;
-      desc.style.height = 'auto';
-      if (desc.scrollHeight > desc.clientHeight) {
-        desc.style.height = desc.scrollHeight + 'px';
-      } else {
-        desc.style.height = (descLine * 4) + 'px';
-      }
-      // Both have same font size
+      const headingLH = parseFloat(getComputedStyle(heading).lineHeight);
+      const descLH = parseFloat(getComputedStyle(desc).lineHeight);
+      heading.style.height = `${headingLH}px`;
+      heading.style.overflowY = "auto";
+      desc.style.height = `${descLH * 4}px`;
+      desc.style.overflowY = "hidden";
+    });
+  }
+  function autoResizeWithLimits() {
+    document.querySelectorAll('.card').forEach(card => {
+      const heading = card.querySelector('.scene-heading');
+      const desc = card.querySelector('.description');
+      if (!heading || !desc) return;
+      const headingLH = parseFloat(getComputedStyle(heading).lineHeight);
+      const descLH = parseFloat(getComputedStyle(desc).lineHeight);
+      // Heading: 1 line min, 2 lines max, scrolls after that
+      heading.style.height = "auto";
+      const hgt = Math.min(heading.scrollHeight, headingLH * 2);
+      heading.style.height = hgt + "px";
+      // Description: 4 lines min, grows taller if needed (never shrinks after more is typed)
+      desc.style.height = "auto";
+      desc.style.overflowY = "hidden";
+      const minDescHeight = descLH * 4;
+      desc.style.height = Math.max(minDescHeight, desc.scrollHeight) + "px";
+      // Keep heading/desc same font size
       desc.style.fontSize = heading.style.fontSize = getComputedStyle(card).fontSize;
     });
   }
-  function attachInputsListeners() {
+  function attachResizingListeners() {
     document.querySelectorAll('.scene-heading, .description').forEach(el => {
-      el.removeEventListener('input', updateCardSizes);
-      el.addEventListener('input', updateCardSizes);
+      el.removeEventListener('input', autoResizeWithLimits);
+      el.addEventListener('input', autoResizeWithLimits);
     });
   }
   function setActiveCard(card) {
@@ -202,19 +217,19 @@
     sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
     sceneHeading.rows = 1;
     sceneHeading.style.overflowY = "auto";
-    sceneHeading.addEventListener('input', updateCardSizes);
+    sceneHeading.addEventListener('input', autoResizeWithLimits);
     sceneHeading.addEventListener('focus', () => setActiveCard(card));
     const description = document.createElement("textarea");
     description.classList.add("description");
     description.placeholder = "Description / Action Lines";
     description.rows = 4;
-    description.addEventListener('input', updateCardSizes);
+    description.addEventListener('input', autoResizeWithLimits);
     description.addEventListener('focus', () => setActiveCard(card));
     card.appendChild(sceneHeading); card.appendChild(description);
     if (insertAfter) insertAfter.after(card); else cardsContainer.appendChild(card);
     updateZoomClass();
-    attachInputsListeners();
-    updateCardSizes();
+    attachResizingListeners();
+    enforceInitialSizes();
     if (makeActive) { card.scrollIntoView({ behavior: "smooth", block: "nearest" }); sceneHeading.focus(); setActiveCard(card); }
   }
   function toggleNumbering() {
@@ -227,7 +242,7 @@
       } else {
         heading.value = heading.value.replace(/^\d+\. ?/, '');
       }
-      updateCardSizes();
+      autoResizeWithLimits();
     });
   }
   function saveActiveCardAsJPG() {
@@ -311,16 +326,16 @@
       for(let i=1; i<=4; i++) card.classList.remove('zoom-'+i);
       card.classList.add('zoom-'+zoomLevel);
     });
-    updateCardSizes();
+    autoResizeWithLimits();
   }
   zoomInBtn.addEventListener('click', () => { if (zoomLevel < 4) { zoomLevel++; updateZoomClass(); } });
   zoomOutBtn.addEventListener('click', () => { if (zoomLevel > 1) { zoomLevel--; updateZoomClass(); } });
 
   // On start/setup
   createCard(true);
-  attachInputsListeners();
-  updateCardSizes();
+  attachResizingListeners();
+  enforceInitialSizes();
+  autoResizeWithLimits();
 </script>
 </body>
 </html>
-
