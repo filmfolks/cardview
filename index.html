@@ -77,6 +77,15 @@
       gap: 10px;
       z-index: 20;
     }
+    .top-controls button {
+      width: 32px; /* Small size */
+      height: 32px;
+      font-size: 16px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .bottom-controls {
       position: fixed;
       bottom: 10px;
@@ -109,29 +118,28 @@
 
     /* Card-specific buttons (add and fullscreen) */
     .card-buttons {
-      display: none; /* Hidden on desktop */
+      display: none; /* Hidden by default */
       position: absolute;
       bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
-      display: flex;
       gap: 10px;
     }
 
-    /* 📱 Mobile: Vertical full-screen cards with expansion */
+    /* 📱 Mobile: Smaller cards for two visible, with expansion */
     @media (max-width: 600px) {
       #cards-container {
-        gap: 0;
+        gap: 20px; /* Space between cards */
         padding: 0;
         margin: 0;
         padding-top: 50px; /* Extra space for top-controls */
       }
       .card {
         width: 100vw;
-        min-height: 100vh;   /* Start at full screen, but expand */
-        height: auto;        /* Grow with content */
-        border-radius: 0;
-        box-shadow: none;
+        min-height: 300px; /* Reduced for two visible on screen */
+        height: auto; /* Grow with content */
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         margin: 0;
         padding: 16px;
         padding-top: 20px; /* Push content below top buttons */
@@ -142,11 +150,8 @@
       .bottom-controls {
         display: none; /* Hide fixed bottom on mobile */
       }
-      .card-buttons {
-        display: flex; /* Show buttons at bottom of each card */
-      }
       .top-controls {
-        top: 5px; /* Above the card */
+        top: 5px; /* Above the page */
       }
       html, body {
         overflow-y: scroll; /* Smooth vertical scrolling */
@@ -191,13 +196,24 @@
     const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
 
     let isDarkMode = false;
+    let activeCard = null;
 
     function autoResize(textarea) {
       textarea.style.height = 'auto'; // Reset
       textarea.style.height = `${textarea.scrollHeight}px`; // Expand to fit content
     }
 
-    function createCard() {
+    function setActiveCard(card) {
+      if (activeCard) {
+        activeCard.querySelector('.card-buttons').style.display = 'none';
+      }
+      activeCard = card;
+      if (activeCard) {
+        activeCard.querySelector('.card-buttons').style.display = 'flex';
+      }
+    }
+
+    function createCard(makeActive = true) {
       const card = document.createElement("div");
       card.classList.add("card");
 
@@ -205,11 +221,13 @@
       sceneHeading.classList.add("scene-heading");
       sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
       sceneHeading.addEventListener('input', () => autoResize(sceneHeading)); // Auto-expand on type
+      sceneHeading.addEventListener('focus', () => setActiveCard(card));
 
       const description = document.createElement("textarea");
       description.classList.add("description");
       description.placeholder = "Description / Action Lines";
       description.addEventListener('input', () => autoResize(description)); // Auto-expand on type
+      description.addEventListener('focus', () => setActiveCard(card));
 
       // Add card-specific buttons for mobile
       const cardButtons = document.createElement("div");
@@ -217,7 +235,7 @@
 
       const addBtn = document.createElement("button");
       addBtn.textContent = "+";
-      addBtn.addEventListener("click", createCard);
+      addBtn.addEventListener("click", () => createCard(true));
 
       const fullscreenBtn = document.createElement("button");
       fullscreenBtn.textContent = "[]";
@@ -237,16 +255,19 @@
       card.appendChild(cardButtons);
       cardsContainer.appendChild(card);
 
-      // Scroll to the new card (shows only it on mobile)
-      card.scrollIntoView({ behavior: "smooth", block: "start" });
-      sceneHeading.focus();
-
       // Initial resize
       autoResize(sceneHeading);
       autoResize(description);
+
+      if (makeActive) {
+        // Scroll to the new card and set it active
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+        sceneHeading.focus();
+        setActiveCard(card);
+      }
     }
 
-    addCardBtn.addEventListener("click", createCard);
+    addCardBtn.addEventListener("click", () => createCard(true));
     printPreviewBtn.addEventListener("click", () => window.print());
     toggleDarkModeBtn.addEventListener("click", () => {
       isDarkMode = !isDarkMode;
@@ -254,8 +275,8 @@
       toggleDarkModeBtn.textContent = isDarkMode ? "☀️" : "🌙";
     });
 
-    // Create one card on load
-    createCard();
+    // Create one card on load and set it active
+    createCard(true);
   </script>
 </body>
 </html>
