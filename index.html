@@ -126,7 +126,7 @@
       gap: 10px;
     }
 
-    /* 📱 Mobile: Smaller cards for two visible, with expansion */
+    /* 📱 Mobile: Smaller cards for multiple visible, with expansion */
     @media (max-width: 600px) {
       #cards-container {
         gap: 20px; /* Space between cards */
@@ -136,7 +136,7 @@
       }
       .card {
         width: 100vw;
-        min-height: 300px; /* Reduced for two visible on screen */
+        min-height: 150px; /* Further reduced (half of previous) for more visible on screen */
         height: auto; /* Grow with content */
         border-radius: 8px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -241,7 +241,7 @@
       fullscreenBtn.textContent = "[]";
       fullscreenBtn.addEventListener("click", () => {
         if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen();
+          card.requestFullscreen(); // Fullscreen only this card
         } else {
           document.exitFullscreen();
         }
