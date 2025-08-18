@@ -1,323 +1,361 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Screenplay Card View</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; background: #fafafa; color: #000; margin: 0; padding: 0; }
-    #cards-container {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
-      width: 98vw;
-      max-width: 1350px;
-      margin: 60px auto 0 auto;
-      padding: 0 0 16px 0;
-      min-height: 300px;
-      box-sizing: border-box;
-    }
-    .card {
-      position: relative;
-      background: #fff;
-      border: 1px solid #888;
-      border-radius: 2px;
-      box-shadow: none;
-      display: flex;
-      flex-direction: column;
-      font-family: "Courier New", Courier, monospace;
-      font-size: 14px;
-      min-height: 80px;
-      height: auto;
-      aspect-ratio: 1 / 1;
-      margin: 0;
-      transition: all 0.13s;
-      overflow: hidden;
-      padding: 10px;
-    }
-    .scene-heading, .description {
-      font-family: inherit;
-      color: #000;
-      border: 1px solid #888;
-      border-radius: 2px;
-      padding: 5px 6px;
-      margin-bottom: 6px;
-      font-size: 14px;
-      resize: none;
-      outline: none;
-      background: #fff;
-      box-sizing: border-box;
-      transition: border 0.15s;
-    }
-    .scene-heading {
-      font-weight: bold;
-      min-height: 1.2em;
-      max-height: 2.6em;
-      margin-bottom: 6px;
-      line-height: 1.2;
-      overflow-y: auto;
-    }
-    .description {
-      flex-grow: 1;
-      min-height: 4.8em;
-      max-height: none;
-      margin-bottom: 0;
-      overflow-y: hidden;
-      line-height: 1.2;
-    }
-    .top-controls {
-      position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 20;
-    }
-    .top-controls button { width: 32px; height: 32px; font-size: 16px; }
-    .bottom-controls { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; z-index: 10; }
-    button { font-size: 1.2rem; padding: 8px 12px; cursor: pointer; border: none; border-radius: 5px; background-color: #e0e0e0; color: black; }
-    button:hover { background-color: #d0d0d0; }
-    #shared-card-buttons { display: none; justify-content: center; gap: 10px; margin-top: 10px; }
-    .fullscreen-exit-wrapper { display:none !important; }
-    body.dark-mode { background: #121212; color: #f0f0f0; }
-    body.dark-mode .card { background: #232326 !important; }
-    body.dark-mode .scene-heading, body.dark-mode .description {
-      background: #232326 !important;
-      color: #fff !important;
-      border: 1px solid #444 !important;
-    }
-    body.dark-mode button { background-color: #333; color: white; }
-    body.dark-mode button:hover { background-color: #444; }
-    /* ZOOM LEVEL CLASSES */
-    .zoom-1 { font-size: 14px; }
-    .zoom-2 { font-size: 18px; }
-    .zoom-3 { font-size: 22px; }
-    .zoom-4 { font-size: 27px; }
-    .card.zoom-1 { min-height: 80px; }
-    .card.zoom-2 { min-height: 110px; }
-    .card.zoom-3 { min-height: 160px; }
-    .card.zoom-4 { min-height: 220px; }
-    @media (max-width:1100px){#cards-container{grid-template-columns:repeat(2, 1fr);}}
-    @media (max-width:700px){#cards-container{grid-template-columns:repeat(1, 1fr);}}
-    @media print {
-      #cards-container { grid-template-columns: repeat(4, 1fr) !important; gap: 3px !important; }
-      .card {
-        height: 220px !important; min-height: 220px !important; max-height: 220px !important;
-        aspect-ratio: 1 / 1 !important; border: none !important; box-shadow: none !important;
-        background: white !important; padding: 10px 7px 8px 10px !important; margin: 0 !important;
-      }
-      .scene-heading, .description {
-        display: block !important; border: 1px solid #888 !important; color: #000 !important;
-        background: #fff !important; font-size: 13px !important;
-      }
-      .scene-heading { min-height: 1.2em !important; max-height: 2.6em !important; text-transform: uppercase !important; overflow: hidden !important; }
-      .description { min-height: 4.8em !important; }
-      .top-controls, .bottom-controls, h1, #shared-card-buttons {display:none !important;}
-    }
-    @media only screen and (max-width: 600px) {
-      .bottom-controls { display: none !important; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Screenplay Card View</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+<style>
+body { font-family: Arial, sans-serif; background: #fafafa; color: #000; margin: 0; padding: 0; }
+#cards-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  width: 98vw;
+  max-width: 1350px;
+  margin: 60px auto 0 auto;
+  padding: 0 0 16px 0;
+  min-height: 300px;
+  box-sizing: border-box;
+}
+.card {
+  background: #fff;
+  border: 1px solid #888;
+  border-radius: 2px;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 14px;
+  min-height: 80px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  transition: all 0.13s;
+  overflow: hidden;
+  padding: 10px;
+}
+.scene-heading, .description {
+  font-family: inherit;
+  color: #000;
+  border: 1px solid #888;
+  border-radius: 2px;
+  padding: 5px 6px;
+  margin-bottom: 6px;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border 0.15s;
+}
+.scene-heading {
+  font-weight: bold;
+  min-height: 1.2em;
+  max-height: 2.6em;
+  margin-bottom: 6px;
+  line-height: 1.2;
+  overflow-y: auto;
+}
+.description {
+  flex-grow: 1;
+  min-height: 4.8em;
+  max-height: none;
+  margin-bottom: 0;
+  overflow-y: hidden;
+  line-height: 1.2;
+}
+.top-controls {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 20;
+  background: none;
+  border: none;
+}
+.top-btn {
+  background: none !important;
+  border: none !important;
+  color: inherit;
+  font-size: 1.35rem;
+  padding: 0 7px;
+  cursor: pointer;
+  box-shadow: none;
+  outline: none;
+  transition: background 0.2s, color 0.2s;
+  border-radius: 5px;
+  min-width: 0;
+  min-height: 0;
+  height: 32px;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.top-btn:active, .top-btn:focus { background: rgba(0,0,0,0.08);}
+.top-btn.autosave-on { background: #bfffc2 !important; color: #005500;}
+.bottom-controls {
+  position: fixed;
+  bottom: 10px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+  background: none;
+}
+.bottom-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 2rem;
+  padding: 0;
+  border-radius: 5px;
+  width: 56px;
+  height: 56px;
+  cursor: pointer;
+  box-shadow: none;
+  outline: none;
+}
+.bottom-btn:active, .bottom-btn:focus { background: rgba(0,0,0,0.07);}
+#shared-card-buttons { display: none; justify-content: center; gap: 10px; margin-top: 10px; }
+body.dark-mode { background: #121212; color: #f0f0f0; }
+body.dark-mode .card { background: #232326 !important; }
+body.dark-mode .scene-heading, body.dark-mode .description {
+  background: #232326 !important;
+  color: #fff !important;
+  border: 1px solid #444 !important;
+}
+body.dark-mode .top-btn { color: #eee; }
+body.dark-mode .bottom-btn { color: #eee; }
+body.dark-mode .top-btn.autosave-on { background: #46a856 !important; color: #fff;}
+/* ZOOM */
+.zoom-1 { font-size: 14px; }
+.zoom-2 { font-size: 18px; }
+.zoom-3 { font-size: 22px; }
+.zoom-4 { font-size: 27px; }
+.card.zoom-1 { min-height: 80px; }
+.card.zoom-2 { min-height: 110px; }
+.card.zoom-3 { min-height: 160px; }
+.card.zoom-4 { min-height: 220px; }
+@media (max-width:1100px){#cards-container{grid-template-columns:repeat(2, 1fr);}}
+@media (max-width:700px){#cards-container{grid-template-columns:repeat(1, 1fr);}}
+@media print {
+  #cards-container { grid-template-columns: repeat(4, 1fr) !important; gap: 3px !important; }
+  .card {
+    height: 220px !important; min-height: 220px !important; max-height: 220px !important;
+    aspect-ratio: 1 / 1 !important; border: none !important; box-shadow: none !important;
+    background: white !important; padding: 10px 7px 8px 10px !important; margin: 0 !important;
+  }
+  .scene-heading, .description {
+    display: block !important; border: 1px solid #888 !important; color: #000 !important;
+    background: #fff !important; font-size: 13px !important;
+  }
+  .scene-heading { min-height: 1.2em !important; max-height: 2.6em !important; text-transform: uppercase !important; overflow: hidden !important; }
+  .description { min-height: 4.8em !important; }
+  .top-controls, .bottom-controls, h1, #shared-card-buttons {display:none !important;}
+}
+@media only screen and (max-width: 600px) {
+  .bottom-controls { display: none !important; }
+}
+</style>
 </head>
 <body>
 <div class="top-controls">
-  <button id="autosaveBtn">A</button>
-  <button id="addCardBtn">+</button>
-  <button id="zoomInBtn">+</button>
-  <button id="zoomOutBtn">-</button>
-  <button id="toggleDarkModeBtn">🌙</button>
-  <button id="toggleNumberBtn">N</button>
-  <button id="saveImageBtn">i</button>
-  <button id="saveTextBtn">T</button>
-  <button id="fullscreenCardBtn">⛶</button>
-  <button id="printPreviewBtn">P</button>
+  <button id="autosaveBtn" class="top-btn" title="Toggle auto-save">A</button>
+  <button id="zoomInBtn" class="top-btn" title="Zoom in">+</button>
+  <button id="zoomOutBtn" class="top-btn" title="Zoom out">-</button>
+  <button id="toggleDarkModeBtn" class="top-btn" title="Dark Mode">🌙</button>
+  <button id="toggleNumberBtn" class="top-btn" title="Number Cards">N</button>
+  <button id="saveImageBtn" class="top-btn" title="Save Card as Image">i</button>
+  <button id="saveTextBtn" class="top-btn" title="Save All as Text">T</button>
+  <button id="fullscreenCardBtn" class="top-btn" title="Fullscreen active card">⛶</button>
+  <button id="printPreviewBtn" class="top-btn" title="Print Preview">P</button>
 </div>
 <div id="cards-container"></div>
-<div class="bottom-controls"><button id="addCardBtn2">+</button></div>
+<div class="bottom-controls">
+  <button id="addCardBtn" class="bottom-btn" title="Add New Card">+</button>
+</div>
 <div id="shared-card-buttons" style="display:none;">
   <button id="shared-add-btn">+</button>
 </div>
 <script>
-  const cardsContainer = document.getElementById("cards-container");
-  const zoomInBtn = document.getElementById("zoomInBtn");
-  const zoomOutBtn = document.getElementById("zoomOutBtn");
-  const addCardBtn = document.getElementById("addCardBtn");
-  const addCardBtn2 = document.getElementById("addCardBtn2");
-  const autosaveBtn = document.getElementById("autosaveBtn");
-  const fullscreenCardBtn = document.getElementById("fullscreenCardBtn");
-  const printPreviewBtn = document.getElementById("printPreviewBtn");
-  const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
-  const toggleNumberBtn = document.getElementById("toggleNumberBtn");
-  const saveImageBtn = document.getElementById("saveImageBtn");
-  const saveTextBtn = document.getElementById("saveTextBtn");
-  let isDarkMode = false, activeCard = null, numberingEnabled = false, zoomLevel = 1;
-  let autosaveInt = null;
-  function enforceInitialSizes() {
-    document.querySelectorAll('.card').forEach(card => {
-      const heading = card.querySelector('.scene-heading');
-      const desc = card.querySelector('.description');
-      if (!heading || !desc) return;
-      const headingLH = parseFloat(getComputedStyle(heading).lineHeight);
-      const descLH = parseFloat(getComputedStyle(desc).lineHeight);
-      heading.style.height = `${headingLH}px`;
-      heading.style.overflowY = "auto";
-      desc.style.height = `${descLH * 4}px`;
-      desc.style.overflowY = "hidden";
-    });
-  }
-  function autoResizeWithLimits() {
-    document.querySelectorAll('.card').forEach(card => {
-      const heading = card.querySelector('.scene-heading');
-      const desc = card.querySelector('.description');
-      if (!heading || !desc) return;
-      const headingLH = parseFloat(getComputedStyle(heading).lineHeight);
-      const descLH = parseFloat(getComputedStyle(desc).lineHeight);
-      heading.style.height = "auto";
-      heading.style.height = Math.min(heading.scrollHeight, headingLH * 2) + "px";
-      heading.style.overflowY = "auto";
-      desc.style.height = "auto";
-      desc.style.overflowY = "hidden";
-      const minDescHeight = descLH * 4;
-      desc.style.height = Math.max(minDescHeight, desc.scrollHeight) + "px";
-      desc.style.fontSize = heading.style.fontSize = getComputedStyle(card).fontSize;
-    });
-  }
-  function attachResizingListeners() {
-    document.querySelectorAll('.scene-heading, .description').forEach(el => {
-      el.removeEventListener('input', autoResizeWithLimits);
-      el.addEventListener('input', autoResizeWithLimits);
-    });
-  }
-  function setActiveCard(card) {
-    if (activeCard === card) return;
-    activeCard = card;
-  }
-  function createCard(makeActive = true, insertAfter = null) {
-    const card = document.createElement("div"); card.classList.add("card");
-    const sceneHeading = document.createElement("textarea");
-    sceneHeading.classList.add("scene-heading");
-    sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
-    sceneHeading.rows = 1;
-    sceneHeading.style.overflowY = "auto";
-    sceneHeading.addEventListener('input', autoResizeWithLimits);
-    sceneHeading.addEventListener('focus', () => setActiveCard(card));
-    const description = document.createElement("textarea");
-    description.classList.add("description");
-    description.placeholder = "Description / Action Lines";
-    description.rows = 4;
-    description.addEventListener('input', autoResizeWithLimits);
-    description.addEventListener('focus', () => setActiveCard(card));
-    card.appendChild(sceneHeading); card.appendChild(description);
-    if (insertAfter) insertAfter.after(card); else cardsContainer.appendChild(card);
-    updateZoomClass();
-    attachResizingListeners();
-    enforceInitialSizes();
-    if (makeActive) { card.scrollIntoView({ behavior: "smooth", block: "nearest" }); sceneHeading.focus(); setActiveCard(card); }
-  }
-  function toggleNumbering() {
-    numberingEnabled = !numberingEnabled;
-    const cards = document.querySelectorAll('.card');
-    cards.forEach((card, index) => {
-      const heading = card.querySelector('.scene-heading');
-      if (numberingEnabled) {
-        heading.value = `${index + 1}. ${heading.value.replace(/^\d+\. ?/, '')}`;
-      } else {
-        heading.value = heading.value.replace(/^\d+\. ?/, '');
-      }
-      autoResizeWithLimits();
-    });
-  }
-  function saveCardsAsText(filename="cards.txt") {
-    const cards = document.querySelectorAll('.card'); let textContent = '';
-    cards.forEach(card => {
-      let heading = card.querySelector('.scene-heading').value.trim();
-      const desc = card.querySelector('.description').value.trim();
-      textContent += heading + '\n\n' + desc + '\n\n\n';
-    });
-    const blob = new Blob([textContent], {type: 'text/plain'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-  function saveActiveCardAsJPG() {
-    if (!activeCard) { alert("Please select a card to edit first."); return; }
-    const isFullscreen = document.fullscreenElement === activeCard;
-    let originalClass = activeCard.className;
-    if (isFullscreen) { activeCard.classList.add('print-like'); }
-    htmlToImage.toJpeg(activeCard, { quality: 0.95 })
-      .then(function (dataUrl) {
-        const link = document.createElement('a'); link.download = 'card.jpg'; link.href = dataUrl; link.click();
-        if (isFullscreen) { activeCard.className = originalClass; }
-      })
-      .catch(function (error) { console.error('Error saving JPG:', error);
-        if (isFullscreen) { activeCard.className = originalClass; }
-      });
-  }
-  // --- Auto Save ---
-  autosaveBtn.classList.remove("on");
-  autosaveBtn.title = "Auto-save OFF";
-  autosaveBtn.style.background = "";
-  function autoSaveToggle() {
-    if (autosaveBtn.classList.contains("on")) {
-      clearInterval(autosaveInt);
-      autosaveBtn.classList.remove("on");
-      autosaveBtn.title = "Auto-save OFF";
-      autosaveBtn.style.background = "";
-      autosaveInt = null;
-    } else {
-      autosaveBtn.classList.add("on");
-      autosaveBtn.title = "Auto-save ON: saves as text every 2 min";
-      autosaveBtn.style.background = "#bfffc2";
-      autosaveInt = setInterval(() => saveCardsAsText("cards_autosave.txt"), 120000);
-    }
-  }
-  autosaveBtn.addEventListener("click", autoSaveToggle);
+const cardsContainer = document.getElementById("cards-container");
+const zoomInBtn = document.getElementById("zoomInBtn");
+const zoomOutBtn = document.getElementById("zoomOutBtn");
+const addCardBtn = document.getElementById("addCardBtn");
+const autosaveBtn = document.getElementById("autosaveBtn");
+const fullscreenCardBtn = document.getElementById("fullscreenCardBtn");
+const printPreviewBtn = document.getElementById("printPreviewBtn");
+const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
+const toggleNumberBtn = document.getElementById("toggleNumberBtn");
+const saveImageBtn = document.getElementById("saveImageBtn");
+const saveTextBtn = document.getElementById("saveTextBtn");
+let isDarkMode = false, activeCard = null, numberingEnabled = false, zoomLevel = 1;
+let autosaveInt = null;
 
-  // Zoom logic
-  function updateZoomClass() {
-    document.querySelectorAll('.card').forEach(card => {
-      for(let i=1; i<=4; i++) card.classList.remove('zoom-'+i);
-      card.classList.add('zoom-'+zoomLevel);
-    });
-    autoResizeWithLimits();
-  }
-  zoomInBtn.addEventListener('click', () => { if (zoomLevel < 4) { zoomLevel++; updateZoomClass(); } });
-  zoomOutBtn.addEventListener('click', () => { if (zoomLevel > 1) { zoomLevel--; updateZoomClass(); } });
-
-  // Add card logic
-  function addNewCard() { createCard(true); }
-  addCardBtn.addEventListener("click", addNewCard);
-  addCardBtn2.addEventListener("click", addNewCard);
-
-  printPreviewBtn.addEventListener("click", () => window.print());
-  toggleDarkModeBtn.addEventListener("click", () => {
-    isDarkMode = !isDarkMode;
-    document.body.classList.toggle("dark-mode", isDarkMode);
-    toggleDarkModeBtn.textContent = isDarkMode ? "☀️" : "🌙";
+function enforceInitialSizes() {
+  document.querySelectorAll('.card').forEach(card => {
+    const heading = card.querySelector('.scene-heading');
+    const desc = card.querySelector('.description');
+    if (!heading || !desc) return;
+    const headingLH = parseFloat(getComputedStyle(heading).lineHeight);
+    const descLH = parseFloat(getComputedStyle(desc).lineHeight);
+    heading.style.height = `${headingLH}px`;
+    heading.style.overflowY = "auto";
+    desc.style.height = `${descLH * 4}px`;
+    desc.style.overflowY = "hidden";
   });
-  toggleNumberBtn.addEventListener("click", toggleNumbering);
-  saveImageBtn.addEventListener("click", saveActiveCardAsJPG);
-  saveTextBtn.addEventListener("click", () => saveCardsAsText("cards.txt"));
-
-  // Fullscreen: top-controls button acts on active card in edit mode
-  fullscreenCardBtn.addEventListener("click", () => {
-    if (!activeCard) {
-      alert("Select or edit a card to fullscreen.");
-      return;
-    }
-    if (document.fullscreenElement === activeCard) {
-      document.exitFullscreen();
-    } else {
-      activeCard.requestFullscreen();
-    }
+}
+function autoResizeWithLimits() {
+  document.querySelectorAll('.card').forEach(card => {
+    const heading = card.querySelector('.scene-heading');
+    const desc = card.querySelector('.description');
+    if (!heading || !desc) return;
+    const headingLH = parseFloat(getComputedStyle(heading).lineHeight);
+    const descLH = parseFloat(getComputedStyle(desc).lineHeight);
+    heading.style.height = "auto";
+    heading.style.height = Math.min(heading.scrollHeight, headingLH * 2) + "px";
+    heading.style.overflowY = "auto";
+    desc.style.height = "auto";
+    desc.style.overflowY = "hidden";
+    const minDescHeight = descLH * 4;
+    desc.style.height = Math.max(minDescHeight, desc.scrollHeight) + "px";
+    desc.style.fontSize = heading.style.fontSize = getComputedStyle(card).fontSize;
   });
-
-  // Start with one card and init
-  createCard(true);
+}
+function attachResizingListeners() {
+  document.querySelectorAll('.scene-heading, .description').forEach(el => {
+    el.removeEventListener('input', autoResizeWithLimits);
+    el.addEventListener('input', autoResizeWithLimits);
+  });
+}
+function setActiveCard(card) {
+  if (activeCard === card) return;
+  activeCard = card;
+}
+function createCard(makeActive = true, insertAfter = null) {
+  const card = document.createElement("div"); card.classList.add("card");
+  const sceneHeading = document.createElement("textarea");
+  sceneHeading.classList.add("scene-heading");
+  sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
+  sceneHeading.rows = 1;
+  sceneHeading.style.overflowY = "auto";
+  sceneHeading.addEventListener('input', autoResizeWithLimits);
+  sceneHeading.addEventListener('focus', () => setActiveCard(card));
+  const description = document.createElement("textarea");
+  description.classList.add("description");
+  description.placeholder = "Description / Action Lines";
+  description.rows = 4;
+  description.addEventListener('input', autoResizeWithLimits);
+  description.addEventListener('focus', () => setActiveCard(card));
+  card.appendChild(sceneHeading); card.appendChild(description);
+  if (insertAfter) insertAfter.after(card); else cardsContainer.appendChild(card);
+  updateZoomClass();
   attachResizingListeners();
   enforceInitialSizes();
+  if (makeActive) { card.scrollIntoView({ behavior: "smooth", block: "nearest" }); sceneHeading.focus(); setActiveCard(card); }
+}
+function toggleNumbering() {
+  numberingEnabled = !numberingEnabled;
+  const cards = document.querySelectorAll('.card');
+  cards.forEach((card, index) => {
+    const heading = card.querySelector('.scene-heading');
+    if (numberingEnabled) {
+      heading.value = `${index + 1}. ${heading.value.replace(/^\d+\. ?/, '')}`;
+    } else {
+      heading.value = heading.value.replace(/^\d+\. ?/, '');
+    }
+    autoResizeWithLimits();
+  });
+}
+function saveCardsAsText(filename="cards.txt") {
+  const cards = document.querySelectorAll('.card'); let textContent = '';
+  cards.forEach(card => {
+    let heading = card.querySelector('.scene-heading').value.trim();
+    const desc = card.querySelector('.description').value.trim();
+    textContent += heading + '\n\n' + desc + '\n\n\n';
+  });
+  const blob = new Blob([textContent], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function saveActiveCardAsJPG() {
+  if (!activeCard) { alert("Please select a card to edit first."); return; }
+  const isFullscreen = document.fullscreenElement === activeCard;
+  let originalClass = activeCard.className;
+  if (isFullscreen) { activeCard.classList.add('print-like'); }
+  htmlToImage.toJpeg(activeCard, { quality: 0.95 })
+    .then(function (dataUrl) {
+      const link = document.createElement('a'); link.download = 'card.jpg'; link.href = dataUrl; link.click();
+      if (isFullscreen) { activeCard.className = originalClass; }
+    })
+    .catch(function (error) { console.error('Error saving JPG:', error);
+      if (isFullscreen) { activeCard.className = originalClass; }
+    });
+}
+// --- Auto Save ---
+autosaveBtn.classList.remove("autosave-on");
+autosaveBtn.title = "Auto-save OFF";
+function autoSaveToggle() {
+  if (autosaveBtn.classList.contains("autosave-on")) {
+    clearInterval(autosaveInt);
+    autosaveBtn.classList.remove("autosave-on");
+    autosaveBtn.title = "Auto-save OFF";
+    autosaveInt = null;
+  } else {
+    autosaveBtn.classList.add("autosave-on");
+    autosaveBtn.title = "Auto-save ON: saves as text every 2 min";
+    autosaveInt = setInterval(() => saveCardsAsText("cards_autosave.txt"), 120000);
+  }
+}
+autosaveBtn.addEventListener("click", autoSaveToggle);
+// Zoom logic
+function updateZoomClass() {
+  document.querySelectorAll('.card').forEach(card => {
+    for(let i=1; i<=4; i++) card.classList.remove('zoom-'+i);
+    card.classList.add('zoom-'+zoomLevel);
+  });
   autoResizeWithLimits();
+}
+zoomInBtn.addEventListener('click', () => { if (zoomLevel < 4) { zoomLevel++; updateZoomClass(); } });
+zoomOutBtn.addEventListener('click', () => { if (zoomLevel > 1) { zoomLevel--; updateZoomClass(); } });
+// Add card logic
+function addNewCard() { createCard(true); }
+addCardBtn.addEventListener("click", addNewCard);
+// Print preview
+printPreviewBtn.addEventListener("click", () => window.print());
+toggleDarkModeBtn.addEventListener("click", () => {
+  isDarkMode = !isDarkMode;
+  document.body.classList.toggle("dark-mode", isDarkMode);
+  toggleDarkModeBtn.textContent = isDarkMode ? "☀️" : "🌙";
+});
+toggleNumberBtn.addEventListener("click", toggleNumbering);
+saveImageBtn.addEventListener("click", saveActiveCardAsJPG);
+saveTextBtn.addEventListener("click", () => saveCardsAsText("cards.txt"));
+// Fullscreen: top-controls button acts on active card in edit mode
+fullscreenCardBtn.addEventListener("click", () => {
+  if (!activeCard) {
+    alert("Select or edit a card to fullscreen.");
+    return;
+  }
+  if (document.fullscreenElement === activeCard) {
+    document.exitFullscreen();
+  } else {
+    activeCard.requestFullscreen();
+  }
+});
+createCard(true);
+attachResizingListeners();
+enforceInitialSizes();
+autoResizeWithLimits();
 </script>
 </body>
 </html>
