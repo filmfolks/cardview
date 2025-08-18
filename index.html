@@ -36,23 +36,6 @@
       overflow: hidden;
       padding: 10px;
     }
-    .fullscreen-btn {
-      position: absolute;
-      top: 7px;
-      right: 7px;
-      background: #e0e0e0;
-      border: none;
-      border-radius: 3px;
-      font-size: 1.2em;
-      cursor: pointer;
-      z-index: 3;
-      height: 29px; width: 29px; padding: 0; line-height: 1; display: flex; align-items: center; justify-content: center;
-      opacity: 0.8;
-      transition: opacity 0.2s;
-    }
-    .fullscreen-btn:hover { background:#d0d0d0; opacity:1 }
-    body.dark-mode .fullscreen-btn { background: #444; color: #fff; }
-    body.dark-mode .fullscreen-btn:hover { background: #333; }
     .scene-heading, .description {
       font-family: inherit;
       color: #000;
@@ -83,7 +66,9 @@
       overflow-y: hidden;
       line-height: 1.2;
     }
-    .top-controls { position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 20; }
+    .top-controls {
+      position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 20;
+    }
     .top-controls button { width: 32px; height: 32px; font-size: 16px; }
     .bottom-controls { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; z-index: 10; }
     button { font-size: 1.2rem; padding: 8px 12px; cursor: pointer; border: none; border-radius: 5px; background-color: #e0e0e0; color: black; }
@@ -113,31 +98,16 @@
     @media print {
       #cards-container { grid-template-columns: repeat(4, 1fr) !important; gap: 3px !important; }
       .card {
-        height: 220px !important;
-        min-height: 220px !important;
-        max-height: 220px !important;
-        aspect-ratio: 1 / 1 !important;
-        border: none !important;
-        box-shadow: none !important;
-        background: white !important;
-        padding: 10px 7px 8px 10px !important;
-        margin: 0 !important;
+        height: 220px !important; min-height: 220px !important; max-height: 220px !important;
+        aspect-ratio: 1 / 1 !important; border: none !important; box-shadow: none !important;
+        background: white !important; padding: 10px 7px 8px 10px !important; margin: 0 !important;
       }
       .scene-heading, .description {
-        display: block !important;
-        border: 1px solid #888 !important;
-        color: #000 !important;
-        background: #fff !important;
-        font-size: 13px !important;
+        display: block !important; border: 1px solid #888 !important; color: #000 !important;
+        background: #fff !important; font-size: 13px !important;
       }
-      .scene-heading {
-        min-height: 1.2em !important;
-        max-height: 2.6em !important;
-        text-transform: uppercase !important;
-        overflow: hidden !important;
-      }
+      .scene-heading { min-height: 1.2em !important; max-height: 2.6em !important; text-transform: uppercase !important; overflow: hidden !important; }
       .description { min-height: 4.8em !important; }
-      .fullscreen-btn { display:none !important;}
       .top-controls, .bottom-controls, h1, #shared-card-buttons {display:none !important;}
     }
     @media only screen and (max-width: 600px) {
@@ -148,17 +118,18 @@
 <body>
 <div class="top-controls">
   <button id="autosaveBtn">A</button>
+  <button id="addCardBtn">+</button>
   <button id="zoomInBtn">+</button>
   <button id="zoomOutBtn">-</button>
   <button id="toggleDarkModeBtn">🌙</button>
   <button id="toggleNumberBtn">N</button>
   <button id="saveImageBtn">i</button>
   <button id="saveTextBtn">T</button>
-  <button id="overallFullscreenBtn">⛶</button>
+  <button id="fullscreenCardBtn">⛶</button>
   <button id="printPreviewBtn">P</button>
 </div>
 <div id="cards-container"></div>
-<div class="bottom-controls"><button id="addCardBtn">+</button></div>
+<div class="bottom-controls"><button id="addCardBtn2">+</button></div>
 <div id="shared-card-buttons" style="display:none;">
   <button id="shared-add-btn">+</button>
 </div>
@@ -167,13 +138,14 @@
   const zoomInBtn = document.getElementById("zoomInBtn");
   const zoomOutBtn = document.getElementById("zoomOutBtn");
   const addCardBtn = document.getElementById("addCardBtn");
+  const addCardBtn2 = document.getElementById("addCardBtn2");
   const autosaveBtn = document.getElementById("autosaveBtn");
+  const fullscreenCardBtn = document.getElementById("fullscreenCardBtn");
   const printPreviewBtn = document.getElementById("printPreviewBtn");
   const toggleDarkModeBtn = document.getElementById("toggleDarkModeBtn");
   const toggleNumberBtn = document.getElementById("toggleNumberBtn");
   const saveImageBtn = document.getElementById("saveImageBtn");
   const saveTextBtn = document.getElementById("saveTextBtn");
-  const overallFullscreenBtn = document.getElementById("overallFullscreenBtn");
   let isDarkMode = false, activeCard = null, numberingEnabled = false, zoomLevel = 1;
   let autosaveInt = null;
   function enforceInitialSizes() {
@@ -217,23 +189,7 @@
     activeCard = card;
   }
   function createCard(makeActive = true, insertAfter = null) {
-    const card = document.createElement("div");
-    card.classList.add("card");
-    // ---- Fullscreen button ----
-    const fullscreenBtn = document.createElement("button");
-    fullscreenBtn.type = "button";
-    fullscreenBtn.className = "fullscreen-btn";
-    fullscreenBtn.textContent = "⛶";
-    fullscreenBtn.title = "Toggle fullscreen";
-    fullscreenBtn.onclick = function () {
-      if (!document.fullscreenElement) {
-        card.requestFullscreen();
-      } else if (document.fullscreenElement === card) {
-        document.exitFullscreen();
-      }
-    };
-    card.appendChild(fullscreenBtn);
-    // ---- Scene heading + desc ----
+    const card = document.createElement("div"); card.classList.add("card");
     const sceneHeading = document.createElement("textarea");
     sceneHeading.classList.add("scene-heading");
     sceneHeading.placeholder = "Scene Heading (e.g., INT. HOUSE - DAY)";
@@ -247,9 +203,7 @@
     description.rows = 4;
     description.addEventListener('input', autoResizeWithLimits);
     description.addEventListener('focus', () => setActiveCard(card));
-    card.appendChild(sceneHeading);
-    card.appendChild(description);
-
+    card.appendChild(sceneHeading); card.appendChild(description);
     if (insertAfter) insertAfter.after(card); else cardsContainer.appendChild(card);
     updateZoomClass();
     attachResizingListeners();
@@ -272,7 +226,7 @@
   function saveCardsAsText(filename="cards.txt") {
     const cards = document.querySelectorAll('.card'); let textContent = '';
     cards.forEach(card => {
-      const heading = card.querySelector('.scene-heading').value.trim();
+      let heading = card.querySelector('.scene-heading').value.trim();
       const desc = card.querySelector('.description').value.trim();
       textContent += heading + '\n\n' + desc + '\n\n\n';
     });
@@ -304,7 +258,6 @@
   autosaveBtn.classList.remove("on");
   autosaveBtn.title = "Auto-save OFF";
   autosaveBtn.style.background = "";
-
   function autoSaveToggle() {
     if (autosaveBtn.classList.contains("on")) {
       clearInterval(autosaveInt);
@@ -321,7 +274,7 @@
   }
   autosaveBtn.addEventListener("click", autoSaveToggle);
 
-  // --- Zoom logic ---
+  // Zoom logic
   function updateZoomClass() {
     document.querySelectorAll('.card').forEach(card => {
       for(let i=1; i<=4; i++) card.classList.remove('zoom-'+i);
@@ -332,7 +285,11 @@
   zoomInBtn.addEventListener('click', () => { if (zoomLevel < 4) { zoomLevel++; updateZoomClass(); } });
   zoomOutBtn.addEventListener('click', () => { if (zoomLevel > 1) { zoomLevel--; updateZoomClass(); } });
 
-  addCardBtn.addEventListener("click", () => createCard(true));
+  // Add card logic
+  function addNewCard() { createCard(true); }
+  addCardBtn.addEventListener("click", addNewCard);
+  addCardBtn2.addEventListener("click", addNewCard);
+
   printPreviewBtn.addEventListener("click", () => window.print());
   toggleDarkModeBtn.addEventListener("click", () => {
     isDarkMode = !isDarkMode;
@@ -342,9 +299,18 @@
   toggleNumberBtn.addEventListener("click", toggleNumbering);
   saveImageBtn.addEventListener("click", saveActiveCardAsJPG);
   saveTextBtn.addEventListener("click", () => saveCardsAsText("cards.txt"));
-  overallFullscreenBtn.addEventListener("click", () => {
-    if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); }
-    else { document.exitFullscreen(); }
+
+  // Fullscreen: top-controls button acts on active card in edit mode
+  fullscreenCardBtn.addEventListener("click", () => {
+    if (!activeCard) {
+      alert("Select or edit a card to fullscreen.");
+      return;
+    }
+    if (document.fullscreenElement === activeCard) {
+      document.exitFullscreen();
+    } else {
+      activeCard.requestFullscreen();
+    }
   });
 
   // Start with one card and init
@@ -355,4 +321,3 @@
 </script>
 </body>
 </html>
-
