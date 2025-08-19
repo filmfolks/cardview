@@ -156,9 +156,6 @@ body.dark-mode .top-btn.autosave-on { background: #46a856 !important; color: #ff
   .description { min-height: 4.8em !important; }
   .top-controls, .bottom-controls, h1, #shared-card-buttons {display:none !important;}
 }
-@media only screen and (max-width: 600px) {
-  .bottom-controls { display: none !important; }
-}
 </style>
 </head>
 <body>
@@ -194,7 +191,6 @@ const saveImageBtn = document.getElementById("saveImageBtn");
 const saveTextBtn = document.getElementById("saveTextBtn");
 let isDarkMode = false, activeCard = null, numberingEnabled = false, zoomLevel = 1;
 let autosaveInt = null;
-
 function enforceInitialSizes() {
   document.querySelectorAll('.card').forEach(card => {
     const heading = card.querySelector('.scene-heading');
