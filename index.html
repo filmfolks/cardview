@@ -13,7 +13,7 @@ body { font-family: Arial, sans-serif; background: #fafafa; color: #000; margin:
   gap: 10px;
   width: 98vw;
   max-width: 1350px;
-  margin: 60px auto 0 auto;
+  margin: 80px auto 0 auto;
   padding: 0 0 16px 0;
   min-height: 300px;
   box-sizing: border-box;
@@ -119,7 +119,7 @@ body.dark-mode .scene-heading, body.dark-mode .description {
   border: 1px solid #444 !important;
 }
 body.dark-mode .top-btn { color: #eee; }
-body.dark-mode .bottom-btn { color: #eee; }
+body.dark-mode .bottom-btn { color: #eee; background: rgba(255,255,255,0.1); }
 body.dark-mode .top-btn.autosave-on { background: #46a856 !important; color: #fff;}
 /* ZOOM */
 .zoom-1 { font-size: 14px; }
@@ -221,6 +221,10 @@ function attachResizingListeners() {
   });
 }
 function createCard(makeActive = true, insertAfter = null) {
+  let prevTop = 0;
+  if (insertAfter && makeActive) {
+    prevTop = insertAfter.getBoundingClientRect().top;
+  }
   const wrapper = document.createElement("div");
   wrapper.classList.add("card-wrapper");
   const card = document.createElement("div");
@@ -275,7 +279,16 @@ function createCard(makeActive = true, insertAfter = null) {
   attachResizingListeners();
   enforceInitialSizes();
   if (makeActive) {
-    wrapper.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (insertAfter) {
+      const newTop = wrapper.getBoundingClientRect().top;
+      const scrollDiff = newTop - prevTop;
+      window.scrollBy({
+        top: scrollDiff,
+        behavior: 'smooth'
+      });
+    } else {
+      wrapper.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
     sceneHeading.focus();
   }
 }
