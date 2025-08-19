@@ -221,10 +221,6 @@ function attachResizingListeners() {
   });
 }
 function createCard(makeActive = true, insertAfter = null) {
-  let prevTop = 0;
-  if (insertAfter && makeActive) {
-    prevTop = insertAfter.getBoundingClientRect().top;
-  }
   const wrapper = document.createElement("div");
   wrapper.classList.add("card-wrapper");
   const card = document.createElement("div");
@@ -279,16 +275,7 @@ function createCard(makeActive = true, insertAfter = null) {
   attachResizingListeners();
   enforceInitialSizes();
   if (makeActive) {
-    if (insertAfter) {
-      const newTop = wrapper.getBoundingClientRect().top;
-      const scrollDiff = newTop - prevTop;
-      window.scrollBy({
-        top: scrollDiff,
-        behavior: 'smooth'
-      });
-    } else {
-      wrapper.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
+    wrapper.scrollIntoView({ behavior: "smooth", block: "nearest" });
     sceneHeading.focus();
   }
 }
