@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dictionary — Translate (Indian languages)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dictionary with Side-by-Side Translate</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .smooth-scroll { -webkit-overflow-scrolling: touch; }
-  </style>
 </head>
 <body class="bg-gradient-to-b from-blue-100 to-white min-h-screen flex flex-col items-center p-4">
+
   <h1 class="text-3xl font-bold text-blue-600 mt-6 mb-4">📖 Simple Dictionary</h1>
 
   <!-- Search -->
@@ -23,280 +21,165 @@
     </button>
   </div>
 
-  <!-- Translate Controls -->
+  <!-- Translate controls -->
   <div class="w-full max-w-md mt-4 flex gap-2 items-center">
     <select id="langSelect" class="flex-1 p-2 border rounded-xl">
       <optgroup label="Indian languages">
-        <option value="as">Assamese (as)</option>
-        <option value="bn">Bengali (bn)</option>
-        <option value="gu">Gujarati (gu)</option>
-        <option value="hi" selected>Hindi (hi)</option>
-        <option value="kn">Kannada (kn)</option>
-        <option value="ml">Malayalam (ml)</option>
-        <option value="mr">Marathi (mr)</option>
-        <option value="or">Odia (or)</option>
-        <option value="pa">Punjabi (pa)</option>
-        <option value="ta">Tamil (ta)</option>
-        <option value="te">Telugu (te)</option>
-        <option value="ur">Urdu (ur)</option>
-        <option value="ne">Nepali (ne)</option>
-        <option value="sa">Sanskrit (sa)</option>
+        <option value="hi" selected>Hindi</option>
+        <option value="bn">Bengali</option>
+        <option value="gu">Gujarati</option>
+        <option value="kn">Kannada</option>
+        <option value="ml">Malayalam</option>
+        <option value="mr">Marathi</option>
+        <option value="or">Odia</option>
+        <option value="pa">Punjabi</option>
+        <option value="ta">Tamil</option>
+        <option value="te">Telugu</option>
+        <option value="ur">Urdu</option>
+        <option value="ne">Nepali</option>
+        <option value="sa">Sanskrit</option>
       </optgroup>
-      <optgroup label="Other">
-        <option value="en">English (en)</option>
-        <option value="fr">French (fr)</option>
-        <option value="de">German (de)</option>
-        <option value="es">Spanish (es)</option>
+      <optgroup label="Other common">
+        <option value="en">English</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="es">Spanish</option>
       </optgroup>
     </select>
-
-    <button id="translateBtn" onclick="translateAll()"
+    <button onclick="translateAll()"
             class="px-4 py-2 bg-green-600 text-white rounded-2xl shadow-md hover:bg-green-700">
       Translate
     </button>
   </div>
 
-  <!-- Status & Errors -->
+  <!-- Messages -->
   <p id="loading" class="mt-6 text-gray-600 hidden">Loading...</p>
   <p id="error" class="mt-3 text-red-500 hidden"></p>
 
-  <!-- English Results -->
-  <div id="result" class="mt-6 w-full max-w-md hidden bg-white shadow-lg rounded-2xl p-4 smooth-scroll"></div>
+  <!-- Results: side by side -->
+  <div id="resultContainer" class="mt-6 w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div id="resultEnglish" class="bg-white shadow-lg rounded-2xl p-4 hidden"></div>
+    <div id="resultTranslated" class="bg-white shadow-lg rounded-2xl p-4 hidden"></div>
+  </div>
 
-  <!-- Translation Results -->
-  <div id="translation" class="mt-4 w-full max-w-md hidden bg-green-50 p-3 rounded-xl border border-green-200 smooth-scroll"></div>
+  <script>
+    let groupedDefinitions = {};
+    let lastWord = "";
 
-<script>
-/*
-  Behavior:
-  - fetchMeaning() -> load dictionaryapi.dev, group definitions by partOfSpeech
-  - translateAll() -> translates each definition grouped by partOfSpeech
-  - translateWithFallback() -> tries MyMemory -> LibreTranslate -> returns null if fails
-  - If translations fail, a Google Translate fallback link is shown.
-*/
+    function setLoading(isLoading) {
+      document.getElementById("loading").classList.toggle("hidden", !isLoading);
+      document.getElementById("searchBtn").disabled = isLoading;
+    }
 
-let groupedDefinitions = {}; // { partOfSpeech: [definitionStrings] }
-let lastWord = "";
+    function showError(msg) {
+      const e = document.getElementById("error");
+      e.textContent = "❌ " + msg;
+      e.classList.remove("hidden");
+    }
 
-function setLoading(flag) {
-  document.getElementById('loading').classList.toggle('hidden', !flag);
-  document.getElementById('searchBtn').disabled = flag;
-  document.getElementById('translateBtn').disabled = flag;
-}
+    function clearError() {
+      const e = document.getElementById("error");
+      e.textContent = "";
+      e.classList.add("hidden");
+    }
 
-function showError(msg) {
-  const e = document.getElementById('error');
-  e.textContent = '❌ ' + msg;
-  e.classList.remove('hidden');
-  console.warn(msg);
-}
+    async function fetchMeaning() {
+      const word = document.getElementById("wordInput").value.trim();
+      const englishDiv = document.getElementById("resultEnglish");
+      const translatedDiv = document.getElementById("resultTranslated");
 
-function clearError() {
-  const e = document.getElementById('error');
-  e.textContent = '';
-  e.classList.add('hidden');
-}
+      if (!word) return;
+      setLoading(true); clearError();
+      englishDiv.innerHTML = ""; translatedDiv.innerHTML = "";
+      englishDiv.classList.add("hidden"); translatedDiv.classList.add("hidden");
+      groupedDefinitions = {}; lastWord = word;
 
-async function fetchMeaning() {
-  const word = document.getElementById('wordInput').value.trim();
-  const resultDiv = document.getElementById('result');
-  const translationDiv = document.getElementById('translation');
-  if (!word) return;
+      try {
+        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        if (!response.ok) throw new Error("Word not found in dictionary");
+        const data = await response.json();
+        const entry = data[0];
 
-  setLoading(true);
-  clearError();
-  resultDiv.innerHTML = '';
-  translationDiv.innerHTML = '';
-  resultDiv.classList.add('hidden');
-  translationDiv.classList.add('hidden');
-  groupedDefinitions = {};
-  lastWord = word;
+        let html = `<h2 class="text-2xl font-semibold text-gray-800">${entry.word}</h2>`;
+        html += `<p class="italic text-gray-500">${entry.phonetic || ""}</p>`;
 
-  try {
-    const resp = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-    if (!resp.ok) throw new Error('Word not found in dictionaryapi.dev');
-    const data = await resp.json();
-    const entry = data[0];
+        entry.meanings.forEach((meaning) => {
+          if (!groupedDefinitions[meaning.partOfSpeech]) {
+            groupedDefinitions[meaning.partOfSpeech] = [];
+          }
+          const defs = meaning.definitions.map(d => d.definition);
+          groupedDefinitions[meaning.partOfSpeech].push(...defs);
 
-    let html = `
-      <div>
-        <div class="flex items-baseline justify-between">
-          <div>
-            <h2 class="text-2xl font-semibold text-gray-800">${entry.word}</h2>
-            <p class="italic text-gray-500">${entry.phonetic || ''}</p>
-          </div>
-        </div>
-    `;
+          html += `<div class="mt-4"><p class="font-semibold text-blue-600">${meaning.partOfSpeech}</p>
+            <ul class="list-disc list-inside text-gray-700">
+            ${defs.map(def => `<li class="mt-1">${def}</li>`).join("")}
+            </ul></div>`;
+        });
 
-    // Group by partOfSpeech
-    entry.meanings.forEach(meaning => {
-      const pos = meaning.partOfSpeech || 'other';
-      const defs = meaning.definitions.map(d => d.definition);
-      if (!groupedDefinitions[pos]) groupedDefinitions[pos] = [];
-      groupedDefinitions[pos].push(...defs);
-
-      html += `
-        <div class="mt-4">
-          <p class="font-semibold text-blue-600">${pos}</p>
-          <ul class="list-disc list-inside text-gray-700">
-            ${defs.map(d => `<li class="mt-1">${escapeHtml(d)}</li>`).join('')}
-          </ul>
-        </div>
-      `;
-    });
-
-    html += '</div>';
-    resultDiv.innerHTML = html;
-    resultDiv.classList.remove('hidden');
-
-  } catch (err) {
-    showError(err.message || err);
-  } finally {
-    setLoading(false);
-  }
-}
-
-// small helper to avoid injecting raw HTML
-function escapeHtml(s) {
-  if (!s) return '';
-  return s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-}
-
-// decode entities MyMemory can return
-function decodeEntities(str) {
-  const ta = document.createElement('textarea');
-  ta.innerHTML = str;
-  return ta.value;
-}
-
-/* Attempt translations:
-   1) MyMemory (free) via GET
-   2) LibreTranslate (public instance) via POST
-   Returns translated string or null if both fail.
-*/
-async function translateWithFallback(text, target) {
-  // 1) Try MyMemory
-  try {
-    const mmUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(target)}`;
-    const r = await fetch(mmUrl);
-    if (r.ok) {
-      const j = await r.json();
-      let tr = j?.responseData?.translatedText || '';
-      // prefer a non-empty, different translation
-      if (tr && tr.trim() && tr.trim().toLowerCase() !== text.trim().toLowerCase()) {
-        return decodeEntities(tr);
-      }
-      // fallback to matches array if available
-      if (j?.matches?.length) {
-        const best = j.matches.find(m => m.translation && m.match > 30) || j.matches[0];
-        if (best && best.translation) return decodeEntities(best.translation);
+        englishDiv.innerHTML = html;
+        englishDiv.classList.remove("hidden");
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        setLoading(false);
       }
     }
-  } catch (e) {
-    console.warn('MyMemory failed:', e);
-  }
 
-  // 2) Try LibreTranslate public instance as fallback
-  try {
-    const libreRes = await fetch('https://libretranslate.de/translate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: text, source: 'en', target: target, format: 'text' })
-    });
-    if (libreRes.ok) {
-      const jj = await libreRes.json();
-      if (jj?.translatedText) return jj.translatedText;
+    function decodeEntities(str) {
+      const ta = document.createElement("textarea");
+      ta.innerHTML = str;
+      return ta.value;
     }
-  } catch (e) {
-    console.warn('LibreTranslate failed:', e);
-  }
 
-  // both failed
-  return null;
-}
+    async function translateOne(text, target) {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(target)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Translation service error");
+      const data = await res.json();
+      return decodeEntities(data?.responseData?.translatedText || "");
+    }
 
-async function translateAll() {
-  const translationDiv = document.getElementById('translation');
-  const target = document.getElementById('langSelect').value;
+    async function translateAll() {
+      const translatedDiv = document.getElementById("resultTranslated");
+      const target = document.getElementById("langSelect").value;
 
-  if (!lastWord || Object.keys(groupedDefinitions).length === 0) {
-    translationDiv.innerHTML = "<p class='text-red-600'>⚠️ No word to translate. Search a word first.</p>";
-    translationDiv.classList.remove('hidden');
-    return;
-  }
+      if (!lastWord || Object.keys(groupedDefinitions).length === 0) {
+        translatedDiv.innerHTML = "<p class='text-red-600'>⚠️ Search a word first.</p>";
+        translatedDiv.classList.remove("hidden");
+        return;
+      }
 
-  translationDiv.innerHTML = `<div class="text-gray-700">🔄 Translating definitions...</div>`;
-  translationDiv.classList.remove('hidden');
-  setLoading(true);
-  clearError();
+      translatedDiv.innerHTML = `<div class="text-gray-700">🔄 Translating...</div>`;
+      translatedDiv.classList.remove("hidden");
+      setLoading(true); clearError();
 
-  try {
-    let anyFailed = false;
-    let outHtml = `<p class="font-semibold text-green-700">🌍 Translated to ${document.querySelector('#langSelect option:checked').textContent}:</p>`;
+      try {
+        let outHtml = `<h2 class="text-2xl font-semibold text-gray-800">${lastWord}</h2>`;
+        outHtml += `<p class="italic text-gray-500">🌍 ${document.querySelector('#langSelect option:checked').textContent}</p>`;
 
-    // We'll translate POS-by-POS and keep original structure
-    for (const [pos, defs] of Object.entries(groupedDefinitions)) {
-      outHtml += `<div class="mt-4"><p class="font-semibold text-green-600">${pos}</p><ul class="list-disc list-inside text-gray-800">`;
+        for (const [pos, defs] of Object.entries(groupedDefinitions)) {
+          outHtml += `<div class="mt-4"><p class="font-semibold text-green-600">${pos}</p><ul class="list-disc list-inside text-gray-800">`;
 
-      // translate sequentially to avoid rate limit bursts
-      for (let i = 0; i < defs.length; i++) {
-        const src = defs[i];
-        // small progress indicator (console)
-        console.log(`Translating (${pos}) [${i+1}/${defs.length}] → ${target}`);
-        let translated = null;
-        try {
-          translated = await translateWithFallback(src, target);
-        } catch (e) {
-          console.warn('translateWithFallback exception', e);
+          for (const def of defs) {
+            let translated = "";
+            try {
+              translated = await translateOne(def, target);
+            } catch {
+              translated = "[translation unavailable]";
+            }
+            outHtml += `<li class="mt-1">${translated}</li>`;
+          }
+
+          outHtml += "</ul></div>";
         }
-        if (!translated) {
-          anyFailed = true;
-          translated = '[translation unavailable]';
-        }
-        outHtml += `<li class="mt-1"><div class="text-gray-500 text-sm"><span class="font-medium">EN:</span> ${escapeHtml(src)}</div>
-                    <div class="text-gray-800 mt-1"><span class="font-medium">→</span> ${escapeHtml(translated)}</div></li>`;
+
+        translatedDiv.innerHTML = outHtml;
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        setLoading(false);
       }
-
-      outHtml += `</ul></div>`;
     }
-
-    // show fallback hint if any failed
-    if (anyFailed) {
-      outHtml += `
-        <div class="mt-3 text-xs text-gray-500">
-          Some translations failed (service may not support that language or a rate limit/CORS occurred).
-        </div>
-      `;
-    }
-
-    // Google Translate fallback link (prefills combined definitions)
-    const combined = encodeURIComponent(Object.values(groupedDefinitions).flat().join('\\n'));
-    const googleLink = `https://translate.google.com/?sl=en&tl=${encodeURIComponent(document.getElementById('langSelect').value)}&text=${combined}&op=translate`;
-
-    outHtml += `<a class="inline-block mt-3 underline text-blue-700" href="${googleLink}" target="_blank" rel="noopener">Open in Google Translate (fallback)</a>`;
-
-    translationDiv.innerHTML = outHtml;
-
-  } catch (err) {
-    translationDiv.innerHTML = `<p class="text-red-600">❌ ${err.message || err}</p>`;
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-}
-</script>
-<div id="google_translate_element" class="mt-6"></div>
-<script type="text/javascript">
-  function googleTranslateElementInit() {
-    new google.translate.TranslateElement(
-      {pageLanguage: 'en', includedLanguages: 'as,bn,gu,hi,kn,ml,mr,or,pa,ta,te,ur,ne,sa'},
-      'google_translate_element'
-    );
-  }
-  
-  
-</script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
+  </script>
 </body>
 </html>
