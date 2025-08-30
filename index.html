@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Simple Dictionary</title>
+  <title>Simpli</title>
   <!-- TailwindCSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -43,9 +43,9 @@
       loadingText.classList.remove("hidden");
 
       try {
+        // Fetch from DictionaryAPI.dev
         const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-        if (!response.ok) throw new Error("Word not found");
-
+        if (!response.ok) throw new Error("Word not found in dictionary");
         const data = await response.json();
         const entry = data[0];
 
@@ -64,6 +64,33 @@
             </div>
           `;
         });
+
+        // Fetch from Wiktionary (clean HTML parse)
+        const wikiRes = await fetch(
+          `https://en.wiktionary.org/w/api.php?action=parse&page=${word}&prop=text&format=json&origin=*`
+        );
+
+        if (wikiRes.ok) {
+          const wikiData = await wikiRes.json();
+          if (wikiData.parse) {
+            const rawHTML = wikiData.parse.text["*"];
+
+            // Create temporary element to parse HTML
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = rawHTML;
+
+            // Try to find the first definition list item
+            const firstDef = tempDiv.querySelector("ol > li");
+            if (firstDef) {
+              html += `
+                <div class="mt-6 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <p class="font-semibold text-green-600">📚 From Wiktionary:</p>
+                  <p class="text-gray-700 mt-1">${firstDef.innerText}</p>
+                </div>
+              `;
+            }
+          }
+        }
 
         resultDiv.innerHTML = html;
         resultDiv.classList.remove("hidden");
