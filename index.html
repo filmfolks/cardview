@@ -75,7 +75,7 @@
             min-width: 240px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); z-index: 10;
             border-radius: 6px; overflow: hidden; margin-top: 10px; left: 0;
         }
-        .dropdown-content a { color: var(--text-color); padding: 12px 20px; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .dropdown-content a { color: var(--text-color); padding: 12px 20px; text-decoration: none; display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .dropdown-content a:hover { background-color: var(--primary-color); }
         .dropdown-header { padding: 8px 20px; font-size: 0.8rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; cursor: default; }
         .dropdown-item { padding-left: 35px !important; }
@@ -120,13 +120,13 @@
             display: block; width: 100%; padding: 12px 15px; background: none; border: none;
             color: var(--text-color); text-align: left; border-radius: 6px; font-size: 1rem;
         }
-        .sequence-item { cursor: grab; }
+        .sequence-item, .schedule-break-item { cursor: grab; }
         .sequence-item:hover { background-color: var(--background-color); }
         .sequence-item.active { background-color: var(--primary-color); font-weight: bold; }
         .schedule-break-item {
             background-color: var(--background-color); font-weight: bold;
             text-transform: uppercase; font-size: 0.8rem; color: #9ca3af;
-            margin-top: 10px; cursor: grab;
+            margin-top: 10px;
         }
         .sortable-ghost { opacity: 0.4; background: var(--primary-color); }
 
@@ -181,17 +181,17 @@
             <div class="dropdown-container">
                 <button id="hamburger-btn" class="icon-btn"><i class="fas fa-bars"></i></button>
                 <div id="dropdown-menu" class="dropdown-content">
-                    <a href="#" id="new-project-btn"><i class="fas fa-plus-circle"></i> Project Info</a>
-                    <a href="#" id="open-project-btn"><i class="fas fa-folder-open"></i> Open Project</a>
-                    <a href="#" id="new-sequence-btn"><i class="fas fa-film"></i> New Sequence</a>
+                    <a id="new-project-btn"><i class="fas fa-plus-circle"></i> Project Info</a>
+                    <a id="open-project-btn"><i class="fas fa-folder-open"></i> Open Project</a>
+                    <a id="new-sequence-btn"><i class="fas fa-film"></i> New Sequence</a>
                     <div class="dropdown-header">Save as...</div>
-                    <a href="#" id="save-project-btn" class="dropdown-item"><i class="fas fa-save"></i> Save Project File</a>
-                    <a href="#" id="save-excel-btn" class="dropdown-item"><i class="fas fa-file-excel"></i> Save as Excel</a>
-                    <a href="#" id="share-project-btn"><i class="fas fa-share-alt"></i> Share Project...</a>
+                    <a id="save-project-btn" class="dropdown-item"><i class="fas fa-save"></i> Save Project File</a>
+                    <a id="save-excel-btn" class="dropdown-item"><i class="fas fa-file-excel"></i> Save as Excel</a>
+                    <a id="share-project-btn"><i class="fas fa-share-alt"></i> Share Project...</a>
                     <hr class="dropdown-divider">
-                    <a href="#" id="clear-project-btn"><i class="fas fa-eraser"></i> Clear Project</a>
-                    <a href="#" id="info-btn"><i class="fas fa-info-circle"></i> Info</a>
-                    <a href="#" id="about-btn"><i class="fas fa-user-friends"></i> About</a>
+                    <a id="clear-project-btn"><i class="fas fa-eraser"></i> Clear Project</a>
+                    <a id="info-btn"><i class="fas fa-info-circle"></i> Info</a>
+                    <a id="about-btn"><i class="fas fa-user-friends"></i> About</a>
                 </div>
             </div>
         </div>
@@ -288,9 +288,9 @@
         <div class="panel-header">
             <h3>Sort Panel</h3>
             <div class="panel-actions">
-                <select id="sort-by-select" class="panel-sort"><option value="default">Sort by...</option><option value="location">Location</option><option value="date">Date</option><option value="status">Status</option></select>
+                <select id="filter-by-select" class="panel-sort"><option value="all">Show All Scenes</option><option value="date">Filter by Date</option><option value="status">Filter by Status</option></select>
                 <button id="add-schedule-break-btn" class="icon-btn small" title="Add Schedule Break"><i class="fas fa-plus"></i></button>
-                <button id="export-panel-btn" class="icon-btn small" title="Export Current Sequence"><i class="fas fa-download"></i></button>
+                <button id="export-panel-btn" class="icon-btn small" title="Export Visible Scenes"><i class="fas fa-download"></i></button>
                 <button id="close-panel-btn" class="icon-btn small">&times;</button>
             </div>
         </div>
@@ -307,6 +307,7 @@
             projectInfo: {}
         };
         let lastContactPerson = '';
+        let activeFilter = { type: 'all', value: '' };
 
         // =================================================================
         // --- INITIALIZATION ---
@@ -318,47 +319,57 @@
             initializeDragAndDrop();
             const contactInput = document.getElementById('scene-contact');
             if (contactInput) contactInput.value = lastContactPerson;
-            console.log("Initialization Complete.");
+            console.log("Initialization Complete. All functions should be working.");
         });
 
         // =================================================================
         // --- SETUP ALL EVENT LISTENERS ---
         // =================================================================
         function setupEventListeners() {
+            const safeAddListener = (id, event, handler) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener(event, handler);
+                } else {
+                    console.error(`Error: Element with ID '${id}' not found.`);
+                }
+            };
+            
             // Main Form
-            document.getElementById('schedule-form').addEventListener('submit', handleAddScene);
+            safeAddListener('schedule-form', 'submit', handleAddScene);
 
             // Left Hamburger Menu
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const dropdownMenu = document.getElementById('dropdown-menu');
-            hamburgerBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdownMenu.classList.toggle('show'); });
-            document.getElementById('new-project-btn').addEventListener('click', openProjectModal);
-            document.getElementById('open-project-btn').addEventListener('click', () => document.getElementById('file-input').click());
-            document.getElementById('file-input').addEventListener('change', openProjectFile);
-            document.getElementById('new-sequence-btn').addEventListener('click', handleNewSequence);
-            document.getElementById('save-project-btn').addEventListener('click', saveProjectFile);
-            document.getElementById('save-excel-btn').addEventListener('click', saveAsExcel);
-            document.getElementById('share-project-btn').addEventListener('click', shareProject);
-            document.getElementById('clear-project-btn').addEventListener('click', clearProject);
-            document.getElementById('info-btn').addEventListener('click', () => document.getElementById('info-modal').style.display = 'block');
-            document.getElementById('about-btn').addEventListener('click', () => document.getElementById('about-modal').style.display = 'block');
+            if(hamburgerBtn && dropdownMenu) hamburgerBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdownMenu.classList.toggle('show'); });
+            
+            safeAddListener('new-project-btn', 'click', openProjectModal);
+            safeAddListener('open-project-btn', 'click', () => document.getElementById('file-input').click());
+            safeAddListener('file-input', 'change', openProjectFile);
+            safeAddListener('new-sequence-btn', 'click', handleNewSequence);
+            safeAddListener('save-project-btn', 'click', saveProjectFile);
+            safeAddListener('save-excel-btn', 'click', saveAsExcel);
+            safeAddListener('share-project-btn', 'click', shareProject);
+            safeAddListener('clear-project-btn', 'click', clearProject);
+            safeAddListener('info-btn', 'click', () => document.getElementById('info-modal').style.display = 'block');
+            safeAddListener('about-btn', 'click', () => document.getElementById('about-modal').style.display = 'block');
 
             // Right Sequence Panel
             const sequencePanel = document.getElementById('sequence-panel');
-            document.getElementById('sequence-hamburger-btn').addEventListener('click', () => sequencePanel.classList.add('open'));
-            document.getElementById('close-panel-btn').addEventListener('click', () => sequencePanel.classList.remove('open'));
-            document.getElementById('add-schedule-break-btn').addEventListener('click', handleAddScheduleBreak);
-            document.getElementById('export-panel-btn').addEventListener('click', saveAsExcel);
-            document.getElementById('sort-by-select').addEventListener('change', (e) => sortActiveSequence(e.target.value));
+            safeAddListener('sequence-hamburger-btn', 'click', () => sequencePanel.classList.add('open'));
+            safeAddListener('close-panel-btn', 'click', () => sequencePanel.classList.remove('open'));
+            safeAddListener('add-schedule-break-btn', 'click', handleAddScheduleBreak);
+            safeAddListener('export-panel-btn', 'click', saveAsExcel);
+            safeAddListener('filter-by-select', 'change', handleFilterChange);
 
             // Modals Close Buttons
-            document.getElementById('close-project-modal').addEventListener('click', closeProjectModal);
-            document.getElementById('save-project-info-btn').addEventListener('click', handleSaveProjectInfo);
-            document.getElementById('close-edit-modal').addEventListener('click', closeEditModal);
-            document.getElementById('save-changes-btn').addEventListener('click', handleSaveChanges);
-            document.getElementById('delete-scene-btn').addEventListener('click', handleDeleteFromModal);
-            document.getElementById('close-info-modal').addEventListener('click', () => document.getElementById('info-modal').style.display = 'none');
-            document.getElementById('close-about-modal').addEventListener('click', () => document.getElementById('about-modal').style.display = 'none');
+            safeAddListener('close-project-modal', 'click', closeProjectModal);
+            safeAddListener('save-project-info-btn', 'click', handleSaveProjectInfo);
+            safeAddListener('close-edit-modal', 'click', closeEditModal);
+            safeAddListener('save-changes-btn', 'click', handleSaveChanges);
+            safeAddListener('delete-scene-btn', 'click', handleDeleteFromModal);
+            safeAddListener('close-info-modal', 'click', () => document.getElementById('info-modal').style.display = 'none');
+            safeAddListener('close-about-modal', 'click', () => document.getElementById('about-modal').style.display = 'none');
 
             // Global click listener to close dropdowns
             document.addEventListener('click', (event) => {
@@ -373,15 +384,17 @@
         // =================================================================
         function initializeDragAndDrop() {
             const listContainer = document.getElementById('sequence-list');
-            new Sortable(listContainer, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                onEnd: (evt) => {
-                    const item = projectData.panelItems.splice(evt.oldIndex, 1)[0];
-                    projectData.panelItems.splice(evt.newIndex, 0, item);
-                    saveProjectData();
-                }
-            });
+            if(listContainer){
+                new Sortable(listContainer, {
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: (evt) => {
+                        const item = projectData.panelItems.splice(evt.oldIndex, 1)[0];
+                        projectData.panelItems.splice(evt.newIndex, 0, item);
+                        saveProjectData();
+                    }
+                });
+            }
         }
 
         // =================================================================
@@ -391,12 +404,9 @@
             let name = prompt("Enter a name for the new sequence:");
             if (name === null) return;
             if (name.trim() === "") name = `Sequence ${projectData.panelItems.filter(i => i.type === 'sequence').length + 1}`;
-            
             const newItem = { type: 'sequence', id: Date.now(), name: name, scenes: [] };
             projectData.panelItems.push(newItem);
             setActiveItem(newItem.id);
-            saveProjectData();
-            renderSequencePanel();
         }
 
         function handleAddScheduleBreak() {
@@ -435,21 +445,40 @@
                 listContainer.appendChild(element);
             });
         }
-
-        function sortActiveSequence(sortBy) {
-            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
-            if (!activeSequence || sortBy === 'default') return;
-            
-            activeSequence.scenes.sort((a, b) => {
-                const valA = a[sortBy] || '';
-                const valB = b[sortBy] || '';
-                if (valA < valB) return -1;
-                if (valA > valB) return 1;
-                return 0;
-            });
-            
-            saveProjectData();
+        
+        // =================================================================
+        // --- FILTERING & SORTING ---
+        // =================================================================
+        function handleFilterChange(e) {
+            const filterType = e.target.value;
+            document.getElementById('filter-by-select').value = 'all'; 
+            if (filterType === 'all') {
+                activeFilter = { type: 'all', value: '' };
+            } else {
+                let filterValue = prompt(`Enter value to filter by ${filterType}:`);
+                if (filterValue !== null && filterValue.trim() !== "") {
+                    activeFilter = { type: filterType, value: filterValue.trim().toLowerCase() };
+                } else {
+                    activeFilter = { type: 'all', value: '' };
+                }
+            }
             renderSchedule();
+        }
+
+        function getVisibleScenes() {
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence || activeSequence.type !== 'sequence') return [];
+            
+            const allScenes = activeSequence.scenes;
+
+            if (activeFilter.type === 'all') {
+                return [...allScenes]; 
+            }
+
+            return allScenes.filter(scene => {
+                const sceneValue = (scene[activeFilter.type] || '').toLowerCase();
+                return sceneValue.includes(activeFilter.value);
+            });
         }
 
         // =================================================================
@@ -458,31 +487,22 @@
         function handleAddScene(e) {
             e.preventDefault();
             let activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
-
             if (!activeSequence || activeSequence.type !== 'sequence') {
                 if (confirm("No sequence created. Would you like to create 'Sequence 1' to add this scene?")) {
                     handleNewSequence();
-                    // After creating sequence, find it again to add the scene
                     activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
-                    if(!activeSequence) return; // Exit if user cancelled the new sequence prompt
+                    if(!activeSequence) return;
                 } else {
                     return;
                 }
             }
-
             const newScene = {
-                id: Date.now(),
-                number: document.getElementById('scene-number').value,
-                heading: document.getElementById('scene-heading').value,
-                date: document.getElementById('scene-date').value,
-                time: document.getElementById('scene-time').value,
-                type: document.getElementById('scene-type').value,
-                location: document.getElementById('scene-location').value,
-                pages: document.getElementById('scene-pages').value,
-                duration: document.getElementById('scene-duration').value,
-                status: document.getElementById('scene-status').value,
-                cast: document.getElementById('scene-cast').value,
-                equipment: document.getElementById('scene-equipment').value,
+                id: Date.now(), number: document.getElementById('scene-number').value,
+                heading: document.getElementById('scene-heading').value, date: document.getElementById('scene-date').value,
+                time: document.getElementById('scene-time').value, type: document.getElementById('scene-type').value,
+                location: document.getElementById('scene-location').value, pages: document.getElementById('scene-pages').value,
+                duration: document.getElementById('scene-duration').value, status: document.getElementById('scene-status').value,
+                cast: document.getElementById('scene-cast').value, equipment: document.getElementById('scene-equipment').value,
                 contact: document.getElementById('scene-contact').value,
             };
             activeSequence.scenes.push(newScene);
@@ -507,32 +527,36 @@
 
             display.textContent = `Current Sequence: ${activeSequence.name}`;
             
-            activeSequence.scenes.forEach(scene => {
-                const stripWrapper = document.createElement('div');
-                stripWrapper.className = 'scene-strip-wrapper';
-                const statusClass = scene.status.replace(/\s+/g, '-').toLowerCase();
-                stripWrapper.innerHTML = `
-                    <div class="scene-strip" id="scene-strip-${scene.id}">
-                        <div class="strip-item"><strong>#${scene.number}</strong></div>
-                        <div class="strip-item">${scene.heading}</div>
-                        <div class="strip-item">${scene.date}</div>
-                        <div class="strip-item">${scene.time}</div>
-                        <div class="strip-item">${scene.type}. ${scene.location}</div>
-                        <div class="strip-item">Pages: <strong>${scene.pages || 'N/A'}</strong></div>
-                        <div class="strip-item">Duration: <strong>${scene.duration || 'N/A'}</strong></div>
-                        <div class="strip-item">Cast: <strong>${scene.cast || 'N/A'}</strong></div>
-                        <div class="strip-item">Equipment: <strong>${scene.equipment || 'N/A'}</strong></div>
-                        <div class="strip-item"><span class="strip-status ${statusClass}">${scene.status}</span></div>
-                    </div>
-                    <div class="scene-actions">
-                        <button class="edit-btn-strip" title="Edit Scene"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="share-btn-strip" title="Share as Image"><i class="fas fa-share-alt"></i></button>
-                    </div>
-                `;
-                stripWrapper.querySelector('.edit-btn-strip').addEventListener('click', () => openEditModal(scene.id));
-                stripWrapper.querySelector('.share-btn-strip').addEventListener('click', () => shareScene(scene.id));
-                container.appendChild(stripWrapper);
-            });
+            const scenesToRender = getVisibleScenes();
+            
+            if (scenesToRender.length === 0 && activeFilter.type !== 'all') {
+                container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes match the current filter.</p>`;
+            } else {
+                scenesToRender.forEach(scene => {
+                    const stripWrapper = document.createElement('div');
+                    stripWrapper.className = 'scene-strip-wrapper';
+                    const statusClass = scene.status.replace(/\s+/g, '-').toLowerCase();
+                    stripWrapper.innerHTML = `
+                        <div class="scene-strip" id="scene-strip-${scene.id}">
+                            <div class="strip-item"><strong>#${scene.number}</strong></div><div class="strip-item">${scene.heading}</div>
+                            <div class="strip-item">${scene.date}</div><div class="strip-item">${scene.time}</div>
+                            <div class="strip-item">${scene.type}. ${scene.location}</div>
+                            <div class="strip-item">Pages: <strong>${scene.pages || 'N/A'}</strong></div>
+                            <div class="strip-item">Duration: <strong>${scene.duration || 'N/A'}</strong></div>
+                            <div class="strip-item">Cast: <strong>${scene.cast || 'N/A'}</strong></div>
+                            <div class="strip-item">Equipment: <strong>${scene.equipment || 'N/A'}</strong></div>
+                            <div class="strip-item"><span class="strip-status ${statusClass}">${scene.status}</span></div>
+                        </div>
+                        <div class="scene-actions">
+                            <button class="edit-btn-strip" title="Edit Scene"><i class="fas fa-pencil-alt"></i></button>
+                            <button class="share-btn-strip" title="Share as Image"><i class="fas fa-share-alt"></i></button>
+                        </div>
+                    `;
+                    stripWrapper.querySelector('.edit-btn-strip').addEventListener('click', () => openEditModal(scene.id));
+                    stripWrapper.querySelector('.share-btn-strip').addEventListener('click', () => shareScene(scene.id));
+                    container.appendChild(stripWrapper);
+                });
+            }
         }
 
         function deleteScene(id) {
@@ -553,7 +577,7 @@
             projectData = savedData ? JSON.parse(savedData) : { panelItems: [], activeItemId: null, projectInfo: {} };
             if (!projectData.projectInfo) projectData.projectInfo = {};
             if (!projectData.panelItems) projectData.panelItems = [];
-            if (!projectData.activeItemId && projectData.panelItems.length > 0) {
+            if (projectData.activeItemId === null && projectData.panelItems.length > 0) {
                 const firstSequence = projectData.panelItems.find(i => i.type === 'sequence');
                 if (firstSequence) projectData.activeItemId = firstSequence.id;
             }
@@ -614,9 +638,7 @@
             document.getElementById('contact-email').value = projectInfo.contactEmail || '';
             document.getElementById('project-info-modal').style.display = 'block';
         }
-
         function closeProjectModal() { document.getElementById('project-info-modal').style.display = 'none'; }
-
         function handleSaveProjectInfo() {
             projectData.projectInfo = {
                 prodName: document.getElementById('prod-name').value, directorName: document.getElementById('director-name').value,
@@ -625,7 +647,6 @@
             saveProjectData();
             closeProjectModal();
         }
-
         function openEditModal(id) {
             const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
             if (!activeSequence) return;
@@ -646,9 +667,7 @@
             document.getElementById('edit-scene-contact').value = scene.contact;
             document.getElementById('edit-scene-modal').style.display = 'block';
         }
-
         function closeEditModal() { document.getElementById('edit-scene-modal').style.display = 'none'; }
-
         function handleSaveChanges() {
             const sceneId = parseInt(document.getElementById('edit-scene-id').value);
             const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
@@ -674,7 +693,6 @@
             renderSchedule();
             closeEditModal();
         }
-
         function handleDeleteFromModal() {
             const sceneId = parseInt(document.getElementById('edit-scene-id').value);
             deleteScene(sceneId);
@@ -687,10 +705,10 @@
         function saveAsExcel() {
             const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
             if (!activeSequence || activeSequence.type !== 'sequence') { alert("Please select a sequence to export."); return; }
-            const projectInfo = projectData.projectInfo || {};
+            const scenesToExport = getVisibleScenes();
             const sequenceName = activeSequence.name;
-            const activeScenes = activeSequence.scenes;
-            if (activeScenes.length === 0) { alert(`Sequence "${sequenceName}" has no scenes to export.`); return; }
+            if (scenesToExport.length === 0) { alert(`No visible scenes in "${sequenceName}" to export.`); return; }
+            const projectInfo = projectData.projectInfo || {};
             let scheduleBreakName = 'Uncategorized';
             const sequenceIndex = projectData.panelItems.findIndex(item => item.id === projectData.activeItemId);
             for (let i = sequenceIndex - 1; i >= 0; i--) {
@@ -709,7 +727,7 @@
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(header);
             worksheet['!merges'] = [{ s: { r: 0, c: 1 }, e: { r: 0, c: 2 } }, { s: { r: 1, c: 1 }, e: { r: 1, c: 2 } }];
-            XLSX.utils.sheet_add_json(worksheet, activeScenes, { origin: `A${header.length + 1}`, skipHeader: false });
+            XLSX.utils.sheet_add_json(worksheet, scenesToExport, { origin: `A${header.length + 1}`, skipHeader: false });
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, sequenceName.replace(/[/\\?*:[\]]/g, ''));
             XLSX.writeFile(workbook, `${sequenceName}_Schedule.xlsx`);
