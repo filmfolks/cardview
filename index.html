@@ -3,58 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shooting Schedule - FilmFolks Pro</title>
-    <link rel="stylesheet" href="style.css">
+    <title>ToshooT - Shooting Schedule</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <style>
+        /* --- Global Styles & Fonts --- */
+        :root {
+            --primary-color: #3b82f6; --background-color: #111827; --surface-color: #1f2937;
+            --text-color: #f3f4f6; --border-color: #374151; --success-color: #22c55e;
+            --danger-color: #ef4444; --warning-color: #f59e0b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color); color: var(--text-color); margin: 0; font-size: 16px;
+        }
+
+        /* --- Header Styles --- */
+        .page-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: var(--surface-color); padding: 15px 20px; border-bottom: 2px solid var(--border-color);
+        }
+        .page-header .header-left, .page-header .header-right {
+            flex: 1; display: flex; align-items: center; gap: 15px;
+        }
+        .page-header .header-right { justify-content: flex-end; }
+        .page-header .header-center { flex: 2; text-align: center; }
+        #app-title {
+            font-family: 'Roboto', sans-serif; margin: 0; font-size: 1.8rem; color: var(--primary-color);
+        }
+
+        /* --- Layout & Form Styles --- */
+        .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
+        .section { background-color: var(--surface-color); padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .new-scene-form { border-top: 2px solid var(--border-color); margin-top: 30px; padding-top: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 10px; background-color: #374151; border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color); font-size: 0.95rem; box-sizing: border-box; }
+        input::placeholder { color: #9ca3af; }
+        input[type="date"], input[type="time"] { color-scheme: dark; }
+        #active-sequence-display {
+            text-align: center; margin-bottom: 20px; font-size: 1.2rem; color: var(--primary-color);
+            font-weight: 600; border: 1px solid var(--border-color); background-color: var(--background-color);
+            padding: 10px; border-radius: 8px;
+        }
+
+        /* --- Floating Label Styles --- */
+        .input-wrapper { position: relative; }
+        .input-wrapper label {
+            position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: #9ca3af;
+            pointer-events: none; transition: all 0.2s ease-in-out; background-color: #374151; padding: 0 4px;
+        }
+        .input-wrapper .has-label:focus ~ label, .input-wrapper .has-label:valid ~ label {
+            top: -8px; left: 8px; transform: translateY(0); font-size: 0.75rem; color: var(--primary-color);
+        }
+
+        /* --- Buttons & Dropdowns --- */
+        button { padding: 10px 20px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .icon-btn { background: none; border: none; color: #9ca3af; font-size: 1.5rem; cursor: pointer; }
+        .icon-btn.small { font-size: 1.2rem; }
+        .dropdown-container { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; background-color: #374151;
+            min-width: 240px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); z-index: 10;
+            border-radius: 6px; overflow: hidden; margin-top: 10px; left: 0;
+        }
+        .dropdown-content a { color: var(--text-color); padding: 12px 20px; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .dropdown-content a:hover { background-color: var(--primary-color); }
+        .dropdown-header { padding: 8px 20px; font-size: 0.8rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; cursor: default; }
+        .dropdown-item { padding-left: 35px !important; }
+        .dropdown-divider { border: none; height: 1px; background-color: var(--border-color); margin: 8px 0; }
+        .show { display: block; }
+
+        /* --- Scene Strip Styles --- */
+        .scene-strips-container { display: flex; flex-direction: column; gap: 8px; }
+        .scene-strip-wrapper { display: flex; align-items: center; gap: 10px; }
+        .scene-strip {
+            flex-grow: 1; background-color: var(--background-color); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 12px 15px; display: flex; align-items: center;
+            gap: 15px; overflow-x: auto; white-space: nowrap;
+        }
+        .strip-item { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: #d1d5db; padding-right: 15px; border-right: 1px solid var(--border-color); }
+        .strip-item:last-of-type { border-right: none; padding-right: 0; }
+        .strip-item strong { color: var(--text-color); font-weight: 600; }
+        .strip-status { padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+        .strip-status.pending { background-color: var(--warning-color); color: #111827; }
+        .strip-status.not-shot { background-color: var(--danger-color); color: var(--text-color); }
+        .strip-status.done { background-color: var(--success-color); color: var(--text-color); }
+        .scene-actions { display: flex; align-items: center; gap: 10px; }
+        .share-btn-strip { background: none; border: none; color: #25D366; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; }
+        .edit-btn-strip { background: none; border: none; color: var(--primary-color); font-size: 1.2rem; cursor: pointer; padding: 0; line-height: 1; }
+
+        /* --- Side Panel for Sequences --- */
+        .side-panel {
+            position: fixed; top: 0; right: -320px; width: 300px; height: 100%;
+            background-color: var(--surface-color); box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            z-index: 2000; transition: right 0.3s ease-in-out; display: flex; flex-direction: column;
+        }
+        .side-panel.open { right: 0; }
+        .panel-header {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+            padding: 15px; border-bottom: 1px solid var(--border-color);
+        }
+        .panel-header h3 { margin: 0; }
+        .panel-actions { display: flex; align-items: center; gap: 8px; width: 100%; }
+        .panel-sort { flex-grow: 1; background-color: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 4px; padding: 4px 6px; font-size: 0.8rem; }
+        .panel-list { overflow-y: auto; padding: 10px; }
+        .sequence-item, .schedule-break-item {
+            display: block; width: 100%; padding: 12px 15px; background: none; border: none;
+            color: var(--text-color); text-align: left; border-radius: 6px; font-size: 1rem;
+        }
+        .sequence-item { cursor: grab; }
+        .sequence-item:hover { background-color: var(--background-color); }
+        .sequence-item.active { background-color: var(--primary-color); font-weight: bold; }
+        .schedule-break-item {
+            background-color: var(--background-color); font-weight: bold;
+            text-transform: uppercase; font-size: 0.8rem; color: #9ca3af;
+            margin-top: 10px; cursor: grab;
+        }
+        .sortable-ghost { opacity: 0.4; background: var(--primary-color); }
+
+        /* --- Modal Styles --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); animation: fadeIn 0.3s; }
+        .modal-content {
+            background-color: var(--surface-color); margin: 10% auto; padding: 30px;
+            border: 1px solid var(--border-color); width: 90%; max-width: 700px;
+            border-radius: 12px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .modal-content.small { max-width: 450px; }
+        .close-btn { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal-form { display: flex; flex-direction: column; gap: 15px; }
+        .modal-form input { background-color: var(--background-color); }
+        .modal-actions { display: flex; justify-content: space-between; margin-top: 20px; }
+        .info-content p { line-height: 1.6; margin: 0 0 10px; }
+        .info-content strong { color: var(--primary-color); }
+        .about-text { font-size: 1.2rem; text-align: center; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- Share Card Template Styles --- */
+        #share-card-template { position: absolute; left: -9999px; top: auto; width: 400px; background-color: #1f2937; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; border-radius: 12px; border: 1px solid #3b82f6; }
+        .share-card-content { padding: 25px; display: flex; flex-direction: column; gap: 10px; }
+        .share-card-header { text-align: left; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 8px; }
+        .share-card-header h1 { margin: 0; font-size: 2.4rem; color: var(--primary-color); }
+        .share-card-header h2 { margin: 5px 0 0; font-size: 1.3rem; font-weight: 400; color: #d1d5db; }
+        .share-card-item { font-size: 1.2rem; line-height: 1.5; }
+        .share-card-item strong { color: #9ca3af; font-weight: 600; margin-right: 8px; }
+        .share-card-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); }
+        .footer-project-info { text-align: left; line-height: 1.5; }
+        .footer-project-info div { font-size: 0.9rem; }
+        .footer-brand { text-align: right; font-weight: 600; font-size: 0.75rem; opacity: 0.5; }
+
+        /* --- Mobile Responsiveness --- */
+        @media (max-width: 900px) {
+            #app-title { font-size: 1.5rem; }
+            .scene-strip { flex-wrap: wrap; white-space: normal; gap: 8px 15px; }
+            .strip-item { border-right: none; padding-right: 0; }
+        }
+        @media (max-width: 768px) {
+            body { padding: 5px; }
+            .page-header { flex-wrap: wrap; padding: 10px 15px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .modal-content { margin: 20% auto; padding: 20px; width: 95%; }
+            .modal-actions { flex-direction: column-reverse; gap: 10px; }
+        }
+    </style>
 </head>
 <body>
     <header class="page-header">
         <div class="header-left">
-            <button id="hamburger-btn" class="icon-btn"><i class="fas fa-bars"></i></button>
-            <div id="dropdown-menu" class="dropdown-content">
-                <a href="#" id="new-project-btn"><i class="fas fa-plus-circle"></i> Project Info</a>
-                <a href="#" id="save-excel-btn"><i class="fas fa-file-excel"></i> Save as Excel</a>
-                <a href="#" id="save-pdf-btn"><i class="fas fa-file-pdf"></i> Save as PDF</a>
+            <div class="dropdown-container">
+                <button id="hamburger-btn" class="icon-btn"><i class="fas fa-bars"></i></button>
+                <div id="dropdown-menu" class="dropdown-content">
+                    <a href="#" id="new-project-btn"><i class="fas fa-plus-circle"></i> Project Info</a>
+                    <a href="#" id="open-project-btn"><i class="fas fa-folder-open"></i> Open Project</a>
+                    <a href="#" id="new-sequence-btn"><i class="fas fa-film"></i> New Sequence</a>
+                    <div class="dropdown-header">Save as...</div>
+                    <a href="#" id="save-project-btn" class="dropdown-item"><i class="fas fa-save"></i> Save Project File</a>
+                    <a href="#" id="save-excel-btn" class="dropdown-item"><i class="fas fa-file-excel"></i> Save as Excel</a>
+                    <a href="#" id="share-project-btn"><i class="fas fa-share-alt"></i> Share Project...</a>
+                    <hr class="dropdown-divider">
+                    <a href="#" id="clear-project-btn"><i class="fas fa-eraser"></i> Clear Project</a>
+                    <a href="#" id="info-btn"><i class="fas fa-info-circle"></i> Info</a>
+                    <a href="#" id="about-btn"><i class="fas fa-user-friends"></i> About</a>
+                </div>
             </div>
-            <h2>Shooting Schedule</h2>
+        </div>
+        <div class="header-center">
+            <h2 id="app-title">ToshooT</h2>
+        </div>
+        <div class="header-right">
+            <button id="sequence-hamburger-btn" class="icon-btn"><i class="fas fa-layer-group"></i></button>
         </div>
     </header>
     
     <div class="container">
+        <input type="file" id="file-input" accept=".filmproj,.json" style="display: none;">
         <div class="section" id="scheduling">
-            <div class="scene-strips-container" id="scene-strips-container">
-                </div>
-
+            <div id="active-sequence-display"></div>
+            <div class="scene-strips-container" id="scene-strips-container"></div>
             <form id="schedule-form" class="new-scene-form">
                 <h3>Add New Scene</h3>
                 <div class="form-grid">
-                    <input type="text" id="scene-number" placeholder="Scene #" required>
-                    <input type="text" id="scene-heading" placeholder="Scene Heading" required>
-                    <div class="input-wrapper">
-                        <input type="date" id="scene-date" class="has-label" required>
-                        <label for="scene-date">Date</label>
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="time" id="scene-time" class="has-label" required>
-                        <label for="scene-time">Time</label>
-                    </div>
-                    <select id="scene-type">
-                        <option value="INT">INT.</option>
-                        <option value="EXT">EXT.</option>
-                        <option value="INT/EXT">INT./EXT.</option>
-                    </select>
-                    <input type="text" id="scene-location" placeholder="Location" required>
-                    <input type="text" id="scene-pages" placeholder="Pages (e.g., 1 3/8)">
+                    <input type="text" id="scene-number" placeholder="Scene #" required><input type="text" id="scene-heading" placeholder="Scene Heading" required>
+                    <div class="input-wrapper"><input type="date" id="scene-date" class="has-label" required><label for="scene-date">Date</label></div>
+                    <div class="input-wrapper"><input type="time" id="scene-time" class="has-label" required><label for="scene-time">Time</label></div>
+                    <select id="scene-type"><option value="INT">INT.</option><option value="EXT">EXT.</option><option value="INT/EXT">INT./EXT.</option></select>
+                    <input type="text" id="scene-location" placeholder="Location" required><input type="text" id="scene-pages" placeholder="Pages (e.g., 1 3/8)">
                     <input type="text" id="scene-duration" placeholder="Duration (e.g., 2h 30m)">
-                    <select id="scene-status">
-                        <option value="Pending">Pending</option>
-                        <option value="Incomplete">Incomplete</option>
-                        <option value="Done">Done</option>
-                    </select>
-                    <input type="text" id="scene-cast" placeholder="Cast (e.g., John, Mary)">
-                    <input type="text" id="scene-equipment" placeholder="Key Equipment">
+                    <select id="scene-status"><option value="Pending">Pending</option><option value="NOT SHOT">NOT SHOT</option><option value="Done">Done</option></select>
+                    <input type="text" id="scene-cast" placeholder="Cast (e.g., John, Mary)"><input type="text" id="scene-equipment" placeholder="Key Equipment">
                     <input type="tel" id="scene-contact" placeholder="Contact Person (e.g., AD)">
                 </div>
                 <button type="submit" class="btn-primary">Add Scene</button>
@@ -69,10 +233,8 @@
             <span class="close-btn" id="close-project-modal">&times;</span>
             <h3>Project Information</h3>
             <div class="modal-form">
-                <input type="text" id="prod-name" placeholder="Production / Studio Name">
-                <input type="text" id="director-name" placeholder="Director Name">
-                <input type="tel" id="contact-number" placeholder="Contact Number">
-                <input type="email" id="contact-email" placeholder="Email">
+                <input type="text" id="prod-name" placeholder="Production / Studio Name"><input type="text" id="director-name" placeholder="Director Name">
+                <input type="tel" id="contact-number" placeholder="Contact Number"><input type="email" id="contact-email" placeholder="Email">
                 <button id="save-project-info-btn" class="btn-primary">Save Info</button>
             </div>
         </div>
@@ -84,25 +246,13 @@
             <h3>Edit Scene</h3>
             <input type="hidden" id="edit-scene-id">
             <div class="form-grid">
-                <input type="text" id="edit-scene-number" placeholder="Scene #">
-                <input type="text" id="edit-scene-heading" placeholder="Scene Heading">
-                <input type="date" id="edit-scene-date">
-                <input type="time" id="edit-scene-time">
-                <select id="edit-scene-type">
-                    <option value="INT">INT.</option>
-                    <option value="EXT">EXT.</option>
-                    <option value="INT/EXT">INT./EXT.</option>
-                </select>
-                <input type="text" id="edit-scene-location" placeholder="Location">
-                <input type="text" id="edit-scene-pages" placeholder="Pages">
+                <input type="text" id="edit-scene-number" placeholder="Scene #"><input type="text" id="edit-scene-heading" placeholder="Scene Heading">
+                <input type="date" id="edit-scene-date"><input type="time" id="edit-scene-time">
+                <select id="edit-scene-type"><option value="INT">INT.</option><option value="EXT">EXT.</option><option value="INT/EXT">INT./EXT.</option></select>
+                <input type="text" id="edit-scene-location" placeholder="Location"><input type="text" id="edit-scene-pages" placeholder="Pages">
                 <input type="text" id="edit-scene-duration" placeholder="Duration">
-                <select id="edit-scene-status">
-                    <option value="Pending">Pending</option>
-                    <option value="Incomplete">Incomplete</option>
-                    <option value="Done">Done</option>
-                </select>
-                <input type="text" id="edit-scene-cast" placeholder="Cast">
-                <input type="text" id="edit-scene-equipment" placeholder="Key Equipment">
+                <select id="edit-scene-status"><option value="Pending">Pending</option><option value="NOT SHOT">NOT SHOT</option><option value="Done">Done</option></select>
+                <input type="text" id="edit-scene-cast" placeholder="Cast"><input type="text" id="edit-scene-equipment" placeholder="Key Equipment">
                 <input type="tel" id="edit-scene-contact" placeholder="Contact Person">
             </div>
             <div class="modal-actions">
@@ -111,7 +261,517 @@
             </div>
         </div>
     </div>
+    
+    <div id="info-modal" class="modal">
+        <div class="modal-content small">
+            <span class="close-btn" id="close-info-modal">&times;</span>
+            <h3>Field & Button Guide</h3>
+            <div class="info-content">
+                <p><strong>Scene #</strong>: The number of your scene (e.g., 1, 2A).</p>
+                <p><strong>Scene Heading</strong>: The description from your script (e.g., INT. CAFE - DAY).</p>
+                <p><strong>Status</strong>: Mark scenes as <strong>Pending</strong>, <strong>NOT SHOT</strong>, or <strong>Done</strong>.</p>
+                <p><strong>Contact Person</strong>: This name is remembered for the next scene you add.</p>
+                <p><strong>Edit Button (✎)</strong>: Click to open a pop-up and edit all details for that scene.</p>
+                <p><strong>Sequences (Right Menu)</strong>: Group scenes into sequences. All scenes are added to the currently active sequence.</p>
+            </div>
+        </div>
+    </div>
+    <div id="about-modal" class="modal">
+        <div class="modal-content small">
+            <span class="close-btn" id="close-about-modal">&times;</span>
+            <h3>About ToshooT</h3>
+            <p class="about-text">Designed By Thosho Tech</p>
+        </div>
+    </div>
+    
+    <div id="sequence-panel" class="side-panel">
+        <div class="panel-header">
+            <h3>Sort Panel</h3>
+            <div class="panel-actions">
+                <select id="sort-by-select" class="panel-sort"><option value="default">Sort by...</option><option value="location">Location</option><option value="date">Date</option><option value="status">Status</option></select>
+                <button id="add-schedule-break-btn" class="icon-btn small" title="Add Schedule Break"><i class="fas fa-plus"></i></button>
+                <button id="export-panel-btn" class="icon-btn small" title="Export Current Sequence"><i class="fas fa-download"></i></button>
+                <button id="close-panel-btn" class="icon-btn small">&times;</button>
+            </div>
+        </div>
+        <div id="sequence-list" class="panel-list"></div>
+    </div>
 
-    <script src="script.js"></script>
+    <script>
+        // =================================================================
+        // --- GLOBAL STATE & DATA STRUCTURE ---
+        // =================================================================
+        let projectData = {
+            panelItems: [], // Holds both sequences and schedule breaks
+            activeItemId: null,
+            projectInfo: {}
+        };
+        let lastContactPerson = '';
+
+        // =================================================================
+        // --- INITIALIZATION ---
+        // =================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("ToshooT Script Initializing...");
+            setupEventListeners();
+            loadProjectData();
+            initializeDragAndDrop();
+            const contactInput = document.getElementById('scene-contact');
+            if (contactInput) contactInput.value = lastContactPerson;
+            console.log("Initialization Complete.");
+        });
+
+        // =================================================================
+        // --- SETUP ALL EVENT LISTENERS ---
+        // =================================================================
+        function setupEventListeners() {
+            // Main Form
+            document.getElementById('schedule-form').addEventListener('submit', handleAddScene);
+
+            // Left Hamburger Menu
+            const hamburgerBtn = document.getElementById('hamburger-btn');
+            const dropdownMenu = document.getElementById('dropdown-menu');
+            hamburgerBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdownMenu.classList.toggle('show'); });
+            document.getElementById('new-project-btn').addEventListener('click', openProjectModal);
+            document.getElementById('open-project-btn').addEventListener('click', () => document.getElementById('file-input').click());
+            document.getElementById('file-input').addEventListener('change', openProjectFile);
+            document.getElementById('new-sequence-btn').addEventListener('click', handleNewSequence);
+            document.getElementById('save-project-btn').addEventListener('click', saveProjectFile);
+            document.getElementById('save-excel-btn').addEventListener('click', saveAsExcel);
+            document.getElementById('share-project-btn').addEventListener('click', shareProject);
+            document.getElementById('clear-project-btn').addEventListener('click', clearProject);
+            document.getElementById('info-btn').addEventListener('click', () => document.getElementById('info-modal').style.display = 'block');
+            document.getElementById('about-btn').addEventListener('click', () => document.getElementById('about-modal').style.display = 'block');
+
+            // Right Sequence Panel
+            const sequencePanel = document.getElementById('sequence-panel');
+            document.getElementById('sequence-hamburger-btn').addEventListener('click', () => sequencePanel.classList.add('open'));
+            document.getElementById('close-panel-btn').addEventListener('click', () => sequencePanel.classList.remove('open'));
+            document.getElementById('add-schedule-break-btn').addEventListener('click', handleAddScheduleBreak);
+            document.getElementById('export-panel-btn').addEventListener('click', saveAsExcel);
+            document.getElementById('sort-by-select').addEventListener('change', (e) => sortActiveSequence(e.target.value));
+
+            // Modals Close Buttons
+            document.getElementById('close-project-modal').addEventListener('click', closeProjectModal);
+            document.getElementById('save-project-info-btn').addEventListener('click', handleSaveProjectInfo);
+            document.getElementById('close-edit-modal').addEventListener('click', closeEditModal);
+            document.getElementById('save-changes-btn').addEventListener('click', handleSaveChanges);
+            document.getElementById('delete-scene-btn').addEventListener('click', handleDeleteFromModal);
+            document.getElementById('close-info-modal').addEventListener('click', () => document.getElementById('info-modal').style.display = 'none');
+            document.getElementById('close-about-modal').addEventListener('click', () => document.getElementById('about-modal').style.display = 'none');
+
+            // Global click listener to close dropdowns
+            document.addEventListener('click', (event) => {
+                if (dropdownMenu.classList.contains('show') && !hamburgerBtn.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+        }
+
+        // =================================================================
+        // --- DRAG-AND-DROP INITIALIZATION ---
+        // =================================================================
+        function initializeDragAndDrop() {
+            const listContainer = document.getElementById('sequence-list');
+            new Sortable(listContainer, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: (evt) => {
+                    const item = projectData.panelItems.splice(evt.oldIndex, 1)[0];
+                    projectData.panelItems.splice(evt.newIndex, 0, item);
+                    saveProjectData();
+                }
+            });
+        }
+
+        // =================================================================
+        // --- SEQUENCE & SCHEDULE BREAK MANAGEMENT ---
+        // =================================================================
+        function handleNewSequence() {
+            let name = prompt("Enter a name for the new sequence:");
+            if (name === null) return;
+            if (name.trim() === "") name = `Sequence ${projectData.panelItems.filter(i => i.type === 'sequence').length + 1}`;
+            
+            const newItem = { type: 'sequence', id: Date.now(), name: name, scenes: [] };
+            projectData.panelItems.push(newItem);
+            setActiveItem(newItem.id);
+            saveProjectData();
+            renderSequencePanel();
+        }
+
+        function handleAddScheduleBreak() {
+            let name = prompt("Enter a name for the schedule break (e.g., DAY 1):");
+            if (name === null || name.trim() === "") return;
+            const newItem = { type: 'schedule_break', id: Date.now(), name: name };
+            projectData.panelItems.push(newItem);
+            saveProjectData();
+            renderSequencePanel();
+        }
+
+        function setActiveItem(id) {
+            const item = projectData.panelItems.find(i => i.id === id);
+            if (item && item.type === 'sequence') {
+                projectData.activeItemId = id;
+                saveProjectData();
+                renderSchedule();
+                renderSequencePanel();
+                document.getElementById('sequence-panel').classList.remove('open');
+            }
+        }
+
+        function renderSequencePanel() {
+            const listContainer = document.getElementById('sequence-list');
+            listContainer.innerHTML = '';
+            projectData.panelItems.forEach(item => {
+                const element = document.createElement('div');
+                if (item.type === 'sequence') {
+                    element.className = `sequence-item ${item.id === projectData.activeItemId ? 'active' : ''}`;
+                    element.textContent = item.name;
+                    element.onclick = () => setActiveItem(item.id);
+                } else if (item.type === 'schedule_break') {
+                    element.className = 'schedule-break-item';
+                    element.textContent = item.name;
+                }
+                listContainer.appendChild(element);
+            });
+        }
+
+        function sortActiveSequence(sortBy) {
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence || sortBy === 'default') return;
+            
+            activeSequence.scenes.sort((a, b) => {
+                const valA = a[sortBy] || '';
+                const valB = b[sortBy] || '';
+                if (valA < valB) return -1;
+                if (valA > valB) return 1;
+                return 0;
+            });
+            
+            saveProjectData();
+            renderSchedule();
+        }
+
+        // =================================================================
+        // --- CORE SCHEDULE FUNCTIONS ---
+        // =================================================================
+        function handleAddScene(e) {
+            e.preventDefault();
+            let activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+
+            if (!activeSequence || activeSequence.type !== 'sequence') {
+                if (confirm("No sequence created. Would you like to create 'Sequence 1' to add this scene?")) {
+                    handleNewSequence();
+                    // After creating sequence, find it again to add the scene
+                    activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+                    if(!activeSequence) return; // Exit if user cancelled the new sequence prompt
+                } else {
+                    return;
+                }
+            }
+
+            const newScene = {
+                id: Date.now(),
+                number: document.getElementById('scene-number').value,
+                heading: document.getElementById('scene-heading').value,
+                date: document.getElementById('scene-date').value,
+                time: document.getElementById('scene-time').value,
+                type: document.getElementById('scene-type').value,
+                location: document.getElementById('scene-location').value,
+                pages: document.getElementById('scene-pages').value,
+                duration: document.getElementById('scene-duration').value,
+                status: document.getElementById('scene-status').value,
+                cast: document.getElementById('scene-cast').value,
+                equipment: document.getElementById('scene-equipment').value,
+                contact: document.getElementById('scene-contact').value,
+            };
+            activeSequence.scenes.push(newScene);
+            lastContactPerson = newScene.contact;
+            saveProjectData();
+            renderSchedule();
+            e.target.reset();
+            document.getElementById('scene-contact').value = lastContactPerson;
+        }
+
+        function renderSchedule() {
+            const container = document.getElementById('scene-strips-container');
+            const display = document.getElementById('active-sequence-display');
+            container.innerHTML = '';
+            
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            
+            if (!activeSequence || activeSequence.type !== 'sequence') {
+                display.textContent = 'No active sequence. Create or select a sequence.';
+                return;
+            }
+
+            display.textContent = `Current Sequence: ${activeSequence.name}`;
+            
+            activeSequence.scenes.forEach(scene => {
+                const stripWrapper = document.createElement('div');
+                stripWrapper.className = 'scene-strip-wrapper';
+                const statusClass = scene.status.replace(/\s+/g, '-').toLowerCase();
+                stripWrapper.innerHTML = `
+                    <div class="scene-strip" id="scene-strip-${scene.id}">
+                        <div class="strip-item"><strong>#${scene.number}</strong></div>
+                        <div class="strip-item">${scene.heading}</div>
+                        <div class="strip-item">${scene.date}</div>
+                        <div class="strip-item">${scene.time}</div>
+                        <div class="strip-item">${scene.type}. ${scene.location}</div>
+                        <div class="strip-item">Pages: <strong>${scene.pages || 'N/A'}</strong></div>
+                        <div class="strip-item">Duration: <strong>${scene.duration || 'N/A'}</strong></div>
+                        <div class="strip-item">Cast: <strong>${scene.cast || 'N/A'}</strong></div>
+                        <div class="strip-item">Equipment: <strong>${scene.equipment || 'N/A'}</strong></div>
+                        <div class="strip-item"><span class="strip-status ${statusClass}">${scene.status}</span></div>
+                    </div>
+                    <div class="scene-actions">
+                        <button class="edit-btn-strip" title="Edit Scene"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="share-btn-strip" title="Share as Image"><i class="fas fa-share-alt"></i></button>
+                    </div>
+                `;
+                stripWrapper.querySelector('.edit-btn-strip').addEventListener('click', () => openEditModal(scene.id));
+                stripWrapper.querySelector('.share-btn-strip').addEventListener('click', () => shareScene(scene.id));
+                container.appendChild(stripWrapper);
+            });
+        }
+
+        function deleteScene(id) {
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence) return;
+            activeSequence.scenes = activeSequence.scenes.filter(scene => scene.id !== id);
+            saveProjectData();
+            renderSchedule();
+        }
+
+        // =================================================================
+        // --- DATA PERSISTENCE & PROJECT FILES ---
+        // =================================================================
+        function saveProjectData() { localStorage.setItem('projectData', JSON.stringify(projectData)); }
+
+        function loadProjectData() {
+            const savedData = localStorage.getItem('projectData');
+            projectData = savedData ? JSON.parse(savedData) : { panelItems: [], activeItemId: null, projectInfo: {} };
+            if (!projectData.projectInfo) projectData.projectInfo = {};
+            if (!projectData.panelItems) projectData.panelItems = [];
+            if (!projectData.activeItemId && projectData.panelItems.length > 0) {
+                const firstSequence = projectData.panelItems.find(i => i.type === 'sequence');
+                if (firstSequence) projectData.activeItemId = firstSequence.id;
+            }
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (activeSequence && activeSequence.scenes && activeSequence.scenes.length > 0) {
+                lastContactPerson = activeSequence.scenes[activeSequence.scenes.length - 1].contact || '';
+            }
+            renderSchedule();
+            renderSequencePanel();
+        }
+
+        function clearProject() {
+            if (confirm('Are you sure you want to clear the entire project?')) {
+                projectData = { panelItems: [], activeItemId: null, projectInfo: {} };
+                lastContactPerson = '';
+                saveProjectData();
+                renderSchedule();
+                renderSequencePanel();
+            }
+        }
+
+        function saveProjectFile() {
+            const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${projectData.projectInfo.prodName || 'Schedule'}.filmproj`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function openProjectFile(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const loadedData = JSON.parse(e.target.result);
+                    if (loadedData && loadedData.panelItems && loadedData.hasOwnProperty('activeItemId')) {
+                        projectData = loadedData;
+                        saveProjectData();
+                        alert('Project loaded successfully!');
+                        loadProjectData();
+                    } else { alert('Error: Invalid project file format.'); }
+                } catch (error) { alert('Error: Could not read project file.'); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // =================================================================
+        // --- MODAL LOGIC ---
+        // =================================================================
+        function openProjectModal() {
+            const projectInfo = projectData.projectInfo || {};
+            document.getElementById('prod-name').value = projectInfo.prodName || '';
+            document.getElementById('director-name').value = projectInfo.directorName || '';
+            document.getElementById('contact-number').value = projectInfo.contactNumber || '';
+            document.getElementById('contact-email').value = projectInfo.contactEmail || '';
+            document.getElementById('project-info-modal').style.display = 'block';
+        }
+
+        function closeProjectModal() { document.getElementById('project-info-modal').style.display = 'none'; }
+
+        function handleSaveProjectInfo() {
+            projectData.projectInfo = {
+                prodName: document.getElementById('prod-name').value, directorName: document.getElementById('director-name').value,
+                contactNumber: document.getElementById('contact-number').value, contactEmail: document.getElementById('contact-email').value
+            };
+            saveProjectData();
+            closeProjectModal();
+        }
+
+        function openEditModal(id) {
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence) return;
+            const scene = activeSequence.scenes.find(s => s.id === id);
+            if (!scene) return;
+            document.getElementById('edit-scene-id').value = scene.id;
+            document.getElementById('edit-scene-number').value = scene.number;
+            document.getElementById('edit-scene-heading').value = scene.heading;
+            document.getElementById('edit-scene-date').value = scene.date;
+            document.getElementById('edit-scene-time').value = scene.time;
+            document.getElementById('edit-scene-type').value = scene.type;
+            document.getElementById('edit-scene-location').value = scene.location;
+            document.getElementById('edit-scene-pages').value = scene.pages;
+            document.getElementById('edit-scene-duration').value = scene.duration;
+            document.getElementById('edit-scene-status').value = scene.status;
+            document.getElementById('edit-scene-cast').value = scene.cast;
+            document.getElementById('edit-scene-equipment').value = scene.equipment;
+            document.getElementById('edit-scene-contact').value = scene.contact;
+            document.getElementById('edit-scene-modal').style.display = 'block';
+        }
+
+        function closeEditModal() { document.getElementById('edit-scene-modal').style.display = 'none'; }
+
+        function handleSaveChanges() {
+            const sceneId = parseInt(document.getElementById('edit-scene-id').value);
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence) return;
+            const sceneIndex = activeSequence.scenes.findIndex(s => s.id === sceneId);
+            if (sceneIndex === -1) return;
+            activeSequence.scenes[sceneIndex] = {
+                id: sceneId,
+                number: document.getElementById('edit-scene-number').value,
+                heading: document.getElementById('edit-scene-heading').value,
+                date: document.getElementById('edit-scene-date').value,
+                time: document.getElementById('edit-scene-time').value,
+                type: document.getElementById('edit-scene-type').value,
+                location: document.getElementById('edit-scene-location').value,
+                pages: document.getElementById('edit-scene-pages').value,
+                duration: document.getElementById('edit-scene-duration').value,
+                status: document.getElementById('edit-scene-status').value,
+                cast: document.getElementById('edit-scene-cast').value,
+                equipment: document.getElementById('edit-scene-equipment').value,
+                contact: document.getElementById('edit-scene-contact').value
+            };
+            saveProjectData();
+            renderSchedule();
+            closeEditModal();
+        }
+
+        function handleDeleteFromModal() {
+            const sceneId = parseInt(document.getElementById('edit-scene-id').value);
+            deleteScene(sceneId);
+            closeEditModal();
+        }
+
+        // =================================================================
+        // --- EXPORT & SHARE FUNCTIONS ---
+        // =================================================================
+        function saveAsExcel() {
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence || activeSequence.type !== 'sequence') { alert("Please select a sequence to export."); return; }
+            const projectInfo = projectData.projectInfo || {};
+            const sequenceName = activeSequence.name;
+            const activeScenes = activeSequence.scenes;
+            if (activeScenes.length === 0) { alert(`Sequence "${sequenceName}" has no scenes to export.`); return; }
+            let scheduleBreakName = 'Uncategorized';
+            const sequenceIndex = projectData.panelItems.findIndex(item => item.id === projectData.activeItemId);
+            for (let i = sequenceIndex - 1; i >= 0; i--) {
+                if (projectData.panelItems[i].type === 'schedule_break') {
+                    scheduleBreakName = projectData.panelItems[i].name;
+                    break;
+                }
+            }
+            const header = [
+                ["Production:", projectInfo.prodName || 'N/A', "Director:", projectInfo.directorName || 'N/A'],
+                ["Contact:", projectInfo.contactNumber || 'N/A', "Email:", projectInfo.contactEmail || 'N/A'],
+                [],
+                [`Schedule Break: ${scheduleBreakName}`],
+                [`Sequence: ${sequenceName}`],
+                []
+            ];
+            const worksheet = XLSX.utils.aoa_to_sheet(header);
+            worksheet['!merges'] = [{ s: { r: 0, c: 1 }, e: { r: 0, c: 2 } }, { s: { r: 1, c: 1 }, e: { r: 1, c: 2 } }];
+            XLSX.utils.sheet_add_json(worksheet, activeScenes, { origin: `A${header.length + 1}`, skipHeader: false });
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, sequenceName.replace(/[/\\?*:[\]]/g, ''));
+            XLSX.writeFile(workbook, `${sequenceName}_Schedule.xlsx`);
+        }
+
+        async function shareProject() {
+            const projectInfo = projectData.projectInfo || {};
+            const baseName = projectInfo.prodName || 'Schedule';
+            const jsonBlob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+            const jsonFile = new File([jsonBlob], `${baseName}.filmproj`, { type: 'application/json' });
+            if (navigator.canShare && navigator.canShare({ files: [jsonFile] })) {
+                try {
+                    await navigator.share({
+                        title: `${baseName} Project`,
+                        text: `Here is the project file for ${baseName}.`,
+                        files: [jsonFile]
+                    });
+                } catch (error) { console.error("Sharing failed:", error); }
+            } else { alert("Web Share is not supported on this browser. This feature is best on mobile."); }
+        }
+
+        async function shareScene(id) {
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence) return;
+            const template = document.getElementById('share-card-template');
+            const scene = activeSequence.scenes.find(s => s.id === id); 
+            const projectInfo = projectData.projectInfo || {};
+            if (!template || !scene) return;
+            let footerHtml = `<div class="footer-project-info">
+                    ${projectInfo.prodName ? `<div>${projectInfo.prodName}</div>` : ''}
+                    ${projectInfo.directorName ? `<div>Dir: ${projectInfo.directorName}</div>` : ''}
+                    ${projectInfo.contactEmail ? `<div>${projectInfo.contactEmail}</div>` : ''}
+                </div><div class="footer-brand">@Thosho Tech</div>`;
+            template.innerHTML = `<div class="share-card-content">
+                    <div class="share-card-header"><h1>Scene #${scene.number}</h1><h2>${scene.heading}</h2></div>
+                    <p class="share-card-item"><strong>Date:</strong> ${scene.date}</p>
+                    <p class="share-card-item"><strong>Time:</strong> ${formatTime12Hour(scene.time)}</p>
+                    <p class="share-card-item"><strong>Location:</strong> ${scene.type}. ${scene.location}</p>
+                    <p class="share-card-item"><strong>Cast:</strong> ${scene.cast || 'N/A'}</p>
+                    <p class="share-card-item"><strong>Contact:</strong> 📞 ${scene.contact || 'N/A'}</p>
+                    <div class="share-card-footer">${footerHtml}</div></div>`;
+            try {
+                const canvas = await html2canvas(template, { scale: 2 });
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                const file = new File([blob], `scene_${scene.number}.png`, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: `Shooting Schedule - Scene ${scene.number}` });
+                } else {
+                    const imgUrl = URL.createObjectURL(blob);
+                    window.open(imgUrl, '_blank');
+                }
+            } catch (error) { console.error('Sharing failed:', error); }
+        }
+
+        function formatTime12Hour(timeString) {
+            if (!timeString) return "N/A";
+            const [hour, minute] = timeString.split(':');
+            const hourInt = parseInt(hour, 10);
+            const ampm = hourInt >= 12 ? 'PM' : 'AM';
+            const hour12 = hourInt % 12 || 12;
+            return `${hour12}:${minute} ${ampm}`;
+        }
+    </script>
 </body>
 </html>
