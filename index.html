@@ -288,11 +288,7 @@
         <div class="panel-header">
             <h3>Sort Panel</h3>
             <div class="panel-actions">
-                <select id="filter-by-select" class="panel-sort">
-                    <option value="all">Show All Scenes</option>
-                    <option value="date">Filter by Date</option>
-                    <option value="status">Filter by Status</option>
-                </select>
+                <select id="filter-by-select" class="panel-sort"><option value="all">Show All Scenes</option><option value="date">Filter by Date</option><option value="status">Filter by Status</option></select>
                 <button id="add-schedule-break-btn" class="icon-btn small" title="Add Schedule Break"><i class="fas fa-plus"></i></button>
                 <button id="export-panel-btn" class="icon-btn small" title="Export Visible Scenes"><i class="fas fa-download"></i></button>
                 <button id="close-panel-btn" class="icon-btn small">&times;</button>
@@ -323,7 +319,7 @@
             initializeDragAndDrop();
             const contactInput = document.getElementById('scene-contact');
             if (contactInput) contactInput.value = lastContactPerson;
-            console.log("Initialization Complete. All functions should be working.");
+            console.log("Initialization Complete. All functions are now active.");
         });
 
         // =================================================================
@@ -335,7 +331,7 @@
                 if (element) {
                     element.addEventListener(event, handler);
                 } else {
-                    console.error(`Error: Element with ID '${id}' not found.`);
+                    console.error(`CRITICAL ERROR: Element with ID '${id}' not found. Some functionality will be broken.`);
                 }
             };
             
@@ -350,7 +346,7 @@
             safeAddListener('file-input', 'change', openProjectFile);
             safeAddListener('new-sequence-btn', 'click', handleNewSequence);
             safeAddListener('save-project-btn', 'click', saveProjectFile);
-            safeAddListener('save-excel-btn', 'click', saveFullProjectAsExcel); // Connects to the new full export
+            safeAddListener('save-excel-btn', 'click', () => saveAsExcel(true)); // Pass true for full project export
             safeAddListener('share-project-btn', 'click', shareProject);
             safeAddListener('clear-project-btn', 'click', clearProject);
             safeAddListener('info-btn', 'click', () => document.getElementById('info-modal').style.display = 'block');
@@ -360,7 +356,7 @@
             safeAddListener('sequence-hamburger-btn', 'click', () => sequencePanel.classList.add('open'));
             safeAddListener('close-panel-btn', 'click', () => sequencePanel.classList.remove('open'));
             safeAddListener('add-schedule-break-btn', 'click', handleAddScheduleBreak);
-            safeAddListener('export-panel-btn', 'click', saveFilteredExcel); // Connects to the filtered export
+            safeAddListener('export-panel-btn', 'click', () => saveAsExcel(false)); // Pass false for filtered export
             safeAddListener('filter-by-select', 'change', handleFilterChange);
 
             safeAddListener('close-project-modal', 'click', closeProjectModal);
@@ -372,7 +368,7 @@
             safeAddListener('close-about-modal', 'click', () => document.getElementById('about-modal').style.display = 'none');
 
             document.addEventListener('click', (event) => {
-                if (dropdownMenu.classList.contains('show') && !hamburgerBtn.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                if (dropdownMenu && dropdownMenu.classList.contains('show') && hamburgerBtn && !hamburgerBtn.contains(event.target) && !dropdownMenu.contains(event.target)) {
                     dropdownMenu.classList.remove('show');
                 }
             });
@@ -430,6 +426,7 @@
 
         function renderSequencePanel() {
             const listContainer = document.getElementById('sequence-list');
+            if (!listContainer) return;
             listContainer.innerHTML = '';
             projectData.panelItems.forEach(item => {
                 const element = document.createElement('div');
@@ -446,7 +443,7 @@
         }
 
         // =================================================================
-        // --- FILTERING LOGIC ---
+        // --- FILTERING & SORTING ---
         // =================================================================
         function handleFilterChange(e) {
             const filterType = e.target.value;
@@ -455,7 +452,7 @@
                 activeFilter = { type: 'all', value: '' };
             } else {
                 let filterValue = prompt(`Enter value to filter by ${filterType}:`);
-                if (filterValue !== null) { // Allow empty string to search for not-set values
+                if (filterValue !== null) {
                     activeFilter = { type: filterType, value: filterValue.trim().toLowerCase() };
                 } else {
                     activeFilter = { type: 'all', value: '' };
@@ -468,14 +465,15 @@
             const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
             if (!activeSequence || activeSequence.type !== 'sequence') return [];
             
-            if (activeFilter.type === 'all') {
-                return [...activeSequence.scenes]; 
-            }
+            const allScenes = [...activeSequence.scenes]; // Work with a copy for sorting
 
-            return activeSequence.scenes.filter(scene => {
-                const sceneValue = (scene[activeFilter.type] || '').toLowerCase();
-                return sceneValue.includes(activeFilter.value);
-            });
+            if (activeFilter.type !== 'all') {
+                return allScenes.filter(scene => {
+                    const sceneValue = (scene[activeFilter.type] || '').toLowerCase();
+                    return sceneValue.includes(activeFilter.value);
+                });
+            }
+            return allScenes;
         }
 
         // =================================================================
@@ -489,9 +487,7 @@
                     handleNewSequence();
                     activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
                     if(!activeSequence) return;
-                } else {
-                    return;
-                }
+                } else { return; }
             }
             const newScene = {
                 id: Date.now(), number: document.getElementById('scene-number').value,
@@ -668,18 +664,12 @@
             const sceneIndex = activeSequence.scenes.findIndex(s => s.id === sceneId);
             if (sceneIndex === -1) return;
             activeSequence.scenes[sceneIndex] = {
-                id: sceneId,
-                number: document.getElementById('edit-scene-number').value,
-                heading: document.getElementById('edit-scene-heading').value,
-                date: document.getElementById('edit-scene-date').value,
-                time: document.getElementById('edit-scene-time').value,
-                type: document.getElementById('edit-scene-type').value,
-                location: document.getElementById('edit-scene-location').value,
-                pages: document.getElementById('edit-scene-pages').value,
-                duration: document.getElementById('edit-scene-duration').value,
-                status: document.getElementById('edit-scene-status').value,
-                cast: document.getElementById('edit-scene-cast').value,
-                equipment: document.getElementById('edit-scene-equipment').value,
+                id: sceneId, number: document.getElementById('edit-scene-number').value,
+                heading: document.getElementById('edit-scene-heading').value, date: document.getElementById('edit-scene-date').value,
+                time: document.getElementById('edit-scene-time').value, type: document.getElementById('edit-scene-type').value,
+                location: document.getElementById('edit-scene-location').value, pages: document.getElementById('edit-scene-pages').value,
+                duration: document.getElementById('edit-scene-duration').value, status: document.getElementById('edit-scene-status').value,
+                cast: document.getElementById('edit-scene-cast').value, equipment: document.getElementById('edit-scene-equipment').value,
                 contact: document.getElementById('edit-scene-contact').value
             };
             saveProjectData();
@@ -700,7 +690,6 @@
             const workbook = XLSX.utils.book_new();
 
             if (isFullProject) {
-                // Export all sequences, each as a new sheet
                 projectData.panelItems.forEach(item => {
                     if (item.type === 'sequence' && item.scenes.length > 0) {
                         const worksheet = XLSX.utils.json_to_sheet(item.scenes);
@@ -710,12 +699,10 @@
                 if(workbook.SheetNames.length === 0){ alert("No scenes in any sequence to export."); return;}
                 XLSX.writeFile(workbook, `${projectInfo.prodName || 'FullProject'}_Schedule.xlsx`);
             } else {
-                // Export only the filtered/visible scenes of the active sequence
                 const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
                 if (!activeSequence) { alert("Please select a sequence to export."); return; }
                 const scenesToExport = getVisibleScenes();
                 if (scenesToExport.length === 0) { alert(`No visible scenes in "${activeSequence.name}" to export.`); return; }
-                
                 let scheduleBreakName = 'Uncategorized';
                 const sequenceIndex = projectData.panelItems.findIndex(item => item.id === projectData.activeItemId);
                 for (let i = sequenceIndex - 1; i >= 0; i--) {
@@ -723,11 +710,8 @@
                 }
                 const header = [
                     ["Production:", projectInfo.prodName || 'N/A', "Director:", projectInfo.directorName || 'N/A'],
-                    ["Contact:", projectInfo.contactNumber || 'N/A', "Email:", projectInfo.contactEmail || 'N/A'],
-                    [],
-                    [`Schedule Break: ${scheduleBreakName}`],
-                    [`Sequence: ${activeSequence.name}`],
-                    []
+                    ["Contact:", projectInfo.contactNumber || 'N/A', "Email:", projectInfo.contactEmail || 'N/A'], [],
+                    [`Schedule Break: ${scheduleBreakName}`], [`Sequence: ${activeSequence.name}`], []
                 ];
                 const worksheet = XLSX.utils.aoa_to_sheet(header);
                 worksheet['!merges'] = [{ s: { r: 0, c: 1 }, e: { r: 0, c: 2 } }, { s: { r: 1, c: 1 }, e: { r: 1, c: 2 } }];
@@ -737,8 +721,47 @@
             }
         }
 
-        async function shareProject() { /* ... */ }
-        async function shareScene(id) { /* ... */ }
+        async function shareProject() {
+            const baseName = projectData.projectInfo.prodName || 'Schedule';
+            const jsonBlob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+            const jsonFile = new File([jsonBlob], `${baseName}.filmproj`, { type: 'application/json' });
+            if (navigator.canShare && navigator.canShare({ files: [jsonFile] })) {
+                await navigator.share({ title: `${baseName} Project`, text: `Here is the project file for ${baseName}.`, files: [jsonFile] }).catch(err => console.error(err));
+            } else { alert("Web Share is not supported on this browser."); }
+        }
+
+        async function shareScene(id) {
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence) return;
+            const template = document.getElementById('share-card-template');
+            const scene = activeSequence.scenes.find(s => s.id === id); 
+            const projectInfo = projectData.projectInfo || {};
+            if (!template || !scene) return;
+            let footerHtml = `<div class="footer-project-info">
+                    ${projectInfo.prodName ? `<div>${projectInfo.prodName}</div>` : ''}
+                    ${projectInfo.directorName ? `<div>Dir: ${projectInfo.directorName}</div>` : ''}
+                    ${projectInfo.contactEmail ? `<div>${projectInfo.contactEmail}</div>` : ''}
+                </div><div class="footer-brand">@Thosho Tech</div>`;
+            template.innerHTML = `<div class="share-card-content">
+                    <div class="share-card-header"><h1>Scene #${scene.number}</h1><h2>${scene.heading}</h2></div>
+                    <p class="share-card-item"><strong>Date:</strong> ${formatDateDDMMYYYY(scene.date)}</p>
+                    <p class="share-card-item"><strong>Time:</strong> ${formatTime12Hour(scene.time)}</p>
+                    <p class="share-card-item"><strong>Location:</strong> ${scene.type}. ${scene.location}</p>
+                    <p class="share-card-item"><strong>Cast:</strong> ${scene.cast || 'N/A'}</p>
+                    <p class="share-card-item"><strong>Contact:</strong> 📞 ${scene.contact || 'N/A'}</p>
+                    <div class="share-card-footer">${footerHtml}</div></div>`;
+            try {
+                const canvas = await html2canvas(template, { scale: 2 });
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                const file = new File([blob], `scene_${scene.number}.png`, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: `Shooting Schedule - Scene ${scene.number}` });
+                } else {
+                    const imgUrl = URL.createObjectURL(blob);
+                    window.open(imgUrl, '_blank');
+                }
+            } catch (error) { console.error('Sharing failed:', error); }
+        }
 
         // =================================================================
         // --- UTILITY FUNCTIONS ---
@@ -751,13 +774,11 @@
             const hour12 = hourInt % 12 || 12;
             return `${hour12}:${minute} ${ampm}`;
         }
-
         function formatDateDDMMYYYY(dateString) {
-            if (!dateString) return "N/A"; // Handles empty date
+            if (!dateString) return "N/A";
             const [year, month, day] = dateString.split('-');
             return `${day}/${month}/${year}`;
         }
-
     </script>
 </body>
 </html>
