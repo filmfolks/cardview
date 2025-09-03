@@ -325,7 +325,7 @@
         });
 
         // =================================================================
-        // --- SETUP ALL EVENT LISTENERS ---
+        // --- SETUP ALL EVENT LISTENERS (ROBUST VERSION) ---
         // =================================================================
         function setupEventListeners() {
             const safeAddListener = (id, event, handler) => {
@@ -445,22 +445,21 @@
                 listContainer.appendChild(element);
             });
         }
-
+        
         // =================================================================
         // --- FILTERING LOGIC ---
         // =================================================================
         function handleFilterChange(e) {
             const filterType = e.target.value;
-            // Visually reset the dropdown for better UX
             document.getElementById('filter-by-select').value = 'all'; 
             if (filterType === 'all') {
                 activeFilter = { type: 'all', value: '' };
             } else {
                 let filterValue = prompt(`Enter value to filter by ${filterType}:`);
-                if (filterValue !== null) { // Allow empty string searches
+                if (filterValue !== null) {
                     activeFilter = { type: filterType, value: filterValue.trim().toLowerCase() };
                 } else {
-                    activeFilter = { type: 'all', value: '' }; // Reset if user cancels prompt
+                    activeFilter = { type: 'all', value: '' };
                 }
             }
             renderSchedule();
@@ -470,7 +469,7 @@
             const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
             if (!activeSequence || activeSequence.type !== 'sequence') return [];
             
-            const allScenes = [...activeSequence.scenes]; // Work with a copy
+            const allScenes = [...activeSequence.scenes];
 
             if (activeFilter.type === 'all') { return allScenes; }
 
@@ -482,7 +481,8 @@
         
         function resetFilter() {
             activeFilter = { type: 'all', value: '' };
-            document.getElementById('filter-by-select').value = 'all';
+            const filterSelect = document.getElementById('filter-by-select');
+            if (filterSelect) filterSelect.value = 'all';
         }
 
         // =================================================================
@@ -494,7 +494,6 @@
             if (!activeSequence || activeSequence.type !== 'sequence') {
                 if (confirm("No sequence created. Would you like to create 'Sequence 1' to add this scene?")) {
                     handleNewSequence();
-                    // After creating sequence, the activeSequence is set globally
                     activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
                     if(!activeSequence) return;
                 } else { return; }
@@ -511,7 +510,7 @@
             activeSequence.scenes.push(newScene);
             lastContactPerson = newScene.contact;
             saveProjectData();
-            resetFilter(); // Make sure the new scene is visible
+            resetFilter();
             renderSchedule();
             e.target.reset();
             document.getElementById('scene-contact').value = lastContactPerson;
@@ -522,15 +521,12 @@
             const display = document.getElementById('active-sequence-display');
             container.innerHTML = '';
             const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
-            
             if (!activeSequence || activeSequence.type !== 'sequence') {
                 display.textContent = 'No active sequence. Create or select a sequence.';
                 return;
             }
             display.textContent = `Current Sequence: ${activeSequence.name}`;
-            
             const scenesToRender = getVisibleScenes();
-            
             if (scenesToRender.length === 0 && activeFilter.type !== 'all') {
                 container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes match the current filter.</p>`;
             } else {
@@ -575,7 +571,6 @@
         function saveProjectData(isBackup = false) {
             const key = isBackup ? 'projectData_backup' : 'projectData';
             localStorage.setItem(key, JSON.stringify(projectData));
-            if(!isBackup) console.log(`Data saved to localStorage at ${new Date().toLocaleTimeString()}`);
         }
         function loadProjectData() {
             let savedData = localStorage.getItem('projectData');
@@ -597,11 +592,13 @@
             if (activeSequence && activeSequence.scenes && activeSequence.scenes.length > 0) {
                 lastContactPerson = activeSequence.scenes[activeSequence.scenes.length - 1].contact || '';
             }
+            const contactInput = document.getElementById('scene-contact');
+            if (contactInput) contactInput.value = lastContactPerson;
             renderSchedule();
             renderSequencePanel();
         }
         function clearProject() {
-            if (confirm('Are you sure you want to clear the entire project? This will delete all sequences and scenes.')) {
+            if (confirm('Are you sure you want to clear the entire project?')) {
                 projectData = { panelItems: [], activeItemId: null, projectInfo: {} };
                 lastContactPerson = '';
                 saveProjectData();
@@ -615,12 +612,63 @@
         // =================================================================
         // --- MODAL LOGIC ---
         // =================================================================
-        function openProjectModal() { /* ... full function ... */ }
+        function openProjectModal() {
+            const projectInfo = projectData.projectInfo || {};
+            document.getElementById('prod-name').value = projectInfo.prodName || '';
+            document.getElementById('director-name').value = projectInfo.directorName || '';
+            document.getElementById('contact-number').value = projectInfo.contactNumber || '';
+            document.getElementById('contact-email').value = projectInfo.contactEmail || '';
+            document.getElementById('project-info-modal').style.display = 'block';
+        }
         function closeProjectModal() { document.getElementById('project-info-modal').style.display = 'none'; }
-        function handleSaveProjectInfo() { /* ... full function ... */ }
-        function openEditModal(id) { /* ... full function ... */ }
+        function handleSaveProjectInfo() {
+            projectData.projectInfo = {
+                prodName: document.getElementById('prod-name').value, directorName: document.getElementById('director-name').value,
+                contactNumber: document.getElementById('contact-number').value, contactEmail: document.getElementById('contact-email').value
+            };
+            saveProjectData();
+            closeProjectModal();
+        }
+        function openEditModal(id) {
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence) return;
+            const scene = activeSequence.scenes.find(s => s.id === id);
+            if (!scene) return;
+            document.getElementById('edit-scene-id').value = scene.id;
+            document.getElementById('edit-scene-number').value = scene.number;
+            document.getElementById('edit-scene-heading').value = scene.heading;
+            document.getElementById('edit-scene-date').value = scene.date;
+            document.getElementById('edit-scene-time').value = scene.time;
+            document.getElementById('edit-scene-type').value = scene.type;
+            document.getElementById('edit-scene-location').value = scene.location;
+            document.getElementById('edit-scene-pages').value = scene.pages;
+            document.getElementById('edit-scene-duration').value = scene.duration;
+            document.getElementById('edit-scene-status').value = scene.status;
+            document.getElementById('edit-scene-cast').value = scene.cast;
+            document.getElementById('edit-scene-equipment').value = scene.equipment;
+            document.getElementById('edit-scene-contact').value = scene.contact;
+            document.getElementById('edit-scene-modal').style.display = 'block';
+        }
         function closeEditModal() { document.getElementById('edit-scene-modal').style.display = 'none'; }
-        function handleSaveChanges() { /* ... full function ... */ }
+        function handleSaveChanges() {
+            const sceneId = parseInt(document.getElementById('edit-scene-id').value);
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if (!activeSequence) return;
+            const sceneIndex = activeSequence.scenes.findIndex(s => s.id === sceneId);
+            if (sceneIndex === -1) return;
+            activeSequence.scenes[sceneIndex] = {
+                id: sceneId, number: document.getElementById('edit-scene-number').value,
+                heading: document.getElementById('edit-scene-heading').value, date: document.getElementById('edit-scene-date').value,
+                time: document.getElementById('edit-scene-time').value, type: document.getElementById('edit-scene-type').value,
+                location: document.getElementById('edit-scene-location').value, pages: document.getElementById('edit-scene-pages').value,
+                duration: document.getElementById('edit-scene-duration').value, status: document.getElementById('edit-scene-status').value,
+                cast: document.getElementById('edit-scene-cast').value, equipment: document.getElementById('edit-scene-equipment').value,
+                contact: document.getElementById('edit-scene-contact').value
+            };
+            saveProjectData();
+            renderSchedule();
+            closeEditModal();
+        }
         function handleDeleteFromModal() {
             const sceneId = parseInt(document.getElementById('edit-scene-id').value);
             deleteScene(sceneId);
@@ -640,8 +688,7 @@
                 if (sequenceIndex > -1) {
                     for (let i = sequenceIndex - 1; i >= 0; i--) {
                         if (projectData.panelItems[i].type === 'schedule_break') {
-                            scheduleBreakName = projectData.panelItems[i].name;
-                            break;
+                            scheduleBreakName = projectData.panelItems[i].name; break;
                         }
                     }
                 }
@@ -678,7 +725,7 @@
         }
         async function shareProject() { /* ... full function ... */ }
         async function shareScene(id) { /* ... full function ... */ }
-
+        
         // =================================================================
         // --- UTILITY FUNCTIONS ---
         // =================================================================
@@ -702,7 +749,6 @@
                 autoSaveInterval = null;
                 statusEl.textContent = 'OFF';
                 statusEl.className = 'auto-save-status off';
-                console.log('Auto-save stopped.');
             } else {
                 autoSaveInterval = setInterval(() => {
                     saveProjectData(false); 
