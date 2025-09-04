@@ -3,22 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToshooT - Shooting Schedule</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>Script Breakdown - ToshooT</title>
+    
+    <!-- Third-Party CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- External CSS -->
+    <!-- Application CSS -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- JavaScript Libraries -->
+    <!-- Third-Party JS Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 <body>
@@ -27,130 +25,110 @@
             <div class="dropdown-container">
                 <button id="hamburger-btn" class="icon-btn"><i class="fas fa-bars"></i></button>
                 <div id="dropdown-menu" class="dropdown-content">
-                    <a id="new-project-btn"><i class="fas fa-plus-circle"></i> Project Info</a>
-                    <a id="open-project-btn"><i class="fas fa-folder-open"></i> Open Project</a>
+                    <a id="project-info-btn"><i class="fas fa-info-circle"></i> Project Info</a>
                     <a id="new-sequence-btn"><i class="fas fa-film"></i> New Sequence</a>
-                    <div class="dropdown-header">Save as...</div>
-                    <a id="save-project-btn" class="dropdown-item"><i class="fas fa-save"></i> Save Project File</a>
-                    <a id="save-excel-btn" class="dropdown-item"><i class="fas fa-file-excel"></i> Save Full Project Excel</a>
+                    <a id="open-project-btn"><i class="fas fa-folder-open"></i> Open Project</a>
+                    <a id="save-project-btn"><i class="fas fa-save"></i> Save Project File</a>
+                    <a id="save-full-excel-btn"><i class="fas fa-file-excel"></i> Save Full Project Excel</a>
                     <a id="share-project-btn"><i class="fas fa-share-alt"></i> Share Project...</a>
+                    <hr class="dropdown-divider">
+                    <div class="dropdown-header">View Mode</div>
+                    <a id="assistant-mode-btn" class="dropdown-item"><i class="fas fa-user-edit"></i> Assistant Mode</a>
+                    <a id="producer-mode-btn" class="dropdown-item"><i class="fas fa-user-tie"></i> Producer Mode</a>
                     <hr class="dropdown-divider">
                     <a id="auto-save-btn"><i class="fas fa-sync-alt"></i> Auto Save <span id="auto-save-status" class="auto-save-status off">OFF</span></a>
                     <a id="clear-project-btn"><i class="fas fa-eraser"></i> Clear Project</a>
-                    <a id="info-btn"><i class="fas fa-info-circle"></i> Info</a>
+                    <a id="info-btn"><i class="fas fa-question-circle"></i> Info</a>
                     <a id="about-btn"><i class="fas fa-user-friends"></i> About</a>
                 </div>
             </div>
         </div>
         <div class="header-center">
-            <h2 id="app-title">ToshooT</h2>
+            <h2 id="app-title">Script Breakdown</h2>
         </div>
         <div class="header-right">
-            <button id="sequence-hamburger-btn" class="icon-btn"><i class="fas fa-layer-group"></i></button>
+            <button id="estimate-btn" class="icon-btn" title="Project Estimate"><i class="fas fa-calculator"></i></button>
+            <button id="sequence-hamburger-btn" class="icon-btn" title="Sequences & Filters"><i class="fas fa-layer-group"></i></button>
         </div>
     </header>
-    
-    <div class="container">
-        <input type="file" id="file-input" accept=".filmproj,.json" style="display: none;">
-        <div class="section" id="scheduling">
-            <div id="active-sequence-display"></div>
-            <div class="scene-strips-container" id="scene-strips-container"></div>
-            <form id="schedule-form" class="new-scene-form">
-                <h3>Add New Scene</h3>
-                <div class="form-grid">
-                    <input type="text" id="scene-number" placeholder="Scene #" required><input type="text" id="scene-heading" placeholder="Scene Heading" required>
-                    <div class="input-wrapper"><input type="date" id="scene-date" class="has-label" required><label for="scene-date">Date</label></div>
-                    <div class="input-wrapper"><input type="time" id="scene-time" class="has-label" required><label for="scene-time">Time</label></div>
-                    <select id="scene-type"><option value="INT">INT.</option><option value="EXT">EXT.</option><option value="INT/EXT">INT./EXT.</option></select>
-                    <input type="text" id="scene-location" placeholder="Location" required><input type="text" id="scene-pages" placeholder="Pages (e.g., 1 3/8)">
-                    <input type="text" id="scene-duration" placeholder="Duration (e.g., 2h 30m)">
-                    <select id="scene-status"><option value="Pending">Pending</option><option value="NOT SHOT">NOT SHOT</option><option value="Done">Done</option></select>
-                    <input type="text" id="scene-cast" placeholder="Cast (e.g., John, Mary)"><input type="text" id="scene-equipment" placeholder="Key Equipment">
-                    <input type="tel" id="scene-contact" placeholder="Contact Person (e.g., AD)">
+
+    <div class="container" id="main-container">
+        <!-- Main Breakdown View -->
+        <div id="breakdown-view">
+            <input type="file" id="file-input" accept=".filmbreakdown,.json" style="display: none;">
+            <div class="section" id="breakdown-tool">
+                <div class="top-controls">
+                    <div id="active-sequence-display">No active sequence.</div>
+                    <div id="currency-selector-wrapper" style="display: none;">
+                        <label for="currency-selector">Currency: </label>
+                        <select id="currency-selector">
+                            <option value="USD">$ USD</option>
+                            <option value="EUR">€ EUR</option>
+                            <option value="GBP">£ GBP</option>
+                            <option value="INR">₹ INR</option>
+                        </select>
+                    </div>
                 </div>
-                <button type="submit" class="btn-primary">Add Scene</button>
-            </form>
+                <div id="breakdown-strips-container"></div>
+                <form id="breakdown-form" class="new-item-form">
+                    <h3>New Scene Breakdown</h3>
+                    <div class="scene-details-form">
+                        <div class="form-grid-condensed">
+                            <input type="text" id="scene-number" placeholder="Scene No." required>
+                            <select id="scene-type"><option value="INT">INT.</option><option value="EXT">EXT.</option><option value="INT/EXT">INT./EXT.</option></select>
+                            <input type="text" id="scene-location" placeholder="Location">
+                            <select id="scene-time"><option value="DAY">DAY</option><option value="NIGHT">NIGHT</option></select>
+                        </div>
+                    </div>
+                    <div class="breakdown-grid" id="breakdown-entry-grid"></div>
+                    <button type="submit" class="btn-primary btn-add-breakdown">Add Scene Breakdown to Sequence</button>
+                </form>
+                <div id="sequence-total-cost" class="sequence-total"></div>
+            </div>
+        </div>
+
+        <!-- Project Estimation View -->
+        <div id="estimation-view" class="section" style="display: none;">
+            <div class="estimation-header">
+                <h2>Scene-by-Scene Cost Report</h2>
+                <p>Detailed costs for each scene in the project.</p>
+            </div>
+            <div id="estimation-table-container"></div>
+            <div class="total-cost-final">
+                <h3 id="grand-total-cost">Grand Total: <span>$0.00</span></h3>
+                <div class="export-buttons">
+                    <button id="export-excel-btn" class="btn-secondary"><i class="fas fa-file-excel"></i> Export as Excel</button>
+                    <button id="export-pdf-btn" class="btn-secondary"><i class="fas fa-file-pdf"></i> Export as PDF</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="share-card-template"></div>
-
-    <div id="project-info-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" id="close-project-modal">&times;</span>
-            <h3>Project Information</h3>
-            <div class="modal-form">
-                <input type="text" id="prod-name" placeholder="Production / Studio Name"><input type="text" id="director-name" placeholder="Director Name">
-                <input type="tel" id="contact-number" placeholder="Contact Number"><input type="email" id="contact-email" placeholder="Email">
-                <button id="save-project-info-btn" class="btn-primary">Save Info</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="edit-scene-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" id="close-edit-modal">&times;</span>
-            <h3>Edit Scene</h3>
-            <input type="hidden" id="edit-scene-id">
-            <div class="form-grid">
-                <input type="text" id="edit-scene-number" placeholder="Scene #"><input type="text" id="edit-scene-heading" placeholder="Scene Heading">
-                <input type="date" id="edit-scene-date"><input type="time" id="edit-scene-time">
-                <select id="edit-scene-type"><option value="INT">INT.</option><option value="EXT">EXT.</option><option value="INT/EXT">INT./EXT.</option></select>
-                <input type="text" id="edit-scene-location" placeholder="Location"><input type="text" id="edit-scene-pages" placeholder="Pages">
-                <input type="text" id="edit-scene-duration" placeholder="Duration">
-                <select id="edit-scene-status"><option value="Pending">Pending</option><option value="NOT SHOT">NOT SHOT</option><option value="Done">Done</option></select>
-                <input type="text" id="edit-scene-cast" placeholder="Cast"><input type="text" id="edit-scene-equipment" placeholder="Key Equipment">
-                <input type="tel" id="edit-scene-contact" placeholder="Contact Person">
-            </div>
-            <div class="modal-actions">
-                <button id="delete-scene-btn" class="btn-danger">Delete Scene</button>
-                <button id="save-changes-btn" class="btn-primary">Save Changes</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="info-modal" class="modal">
-        <div class="modal-content small">
-            <span class="close-btn" id="close-info-modal">&times;</span>
-            <h3>Field & Button Guide</h3>
-            <div class="info-content">
-                <p><strong>Scene #</strong>: The number of your scene (e.g., 1, 2A).</p>
-                <p><strong>Scene Heading</strong>: Description from your script (e.g., INT. CAFE - DAY).</p>
-                <p><strong>Status</strong>: Mark scenes as <strong>Pending</strong>, <strong>NOT SHOT</strong>, or <strong>Done</strong>.</p>
-                <p><strong>Contact Person</strong>: This name is remembered for the next scene you add.</p>
-                <p><strong>Edit Button (✎)</strong>: Click to open a pop-up and edit all details for that scene.</p>
-                <p><strong>Sequences (Right Menu)</strong>: Group scenes into sequences. All scenes are added to the currently active sequence.</p>
-            </div>
-        </div>
-    </div>
-    <div id="about-modal" class="modal">
-        <div class="modal-content small">
-            <span class="close-btn" id="close-about-modal">&times;</span>
-            <h3>About ToshooT</h3>
-            <p class="about-text">Designed By Thosho Tech</p>
-        </div>
-    </div>
-    
+    <!-- Side Panel for Sequences & Filters -->
     <div id="sequence-panel" class="side-panel">
         <div class="panel-header">
-            <h3>Sort Panel</h3>
-            <div class="panel-actions">
-                <select id="filter-by-select" class="panel-sort">
-                    <option value="all">Show All Scenes</option>
-                    <option value="date">Filter by Date</option>
-                    <option value="status">Filter by Status</option>
-                    <option value="cast">Filter by Cast</option>
-                </select>
+            <h3>Sequences & Filters</h3>
+            <div class="panel-header-actions">
                 <button id="add-schedule-break-btn" class="icon-btn small" title="Add Schedule Break"><i class="fas fa-plus"></i></button>
-                <button id="export-panel-btn" class="icon-btn small" title="Export Visible Scenes"><i class="fas fa-download"></i></button>
+                <button id="export-panel-btn" class="icon-btn small" title="Export Filtered Scenes as Excel"><i class="fas fa-download"></i></button>
                 <button id="close-panel-btn" class="icon-btn small">&times;</button>
             </div>
-            <div id="filter-controls" style="margin-top: 10px; width: 100%;"></div>
+        </div>
+        <div class="panel-filter-section">
+            <h4>Filter Breakdowns</h4>
+            <select id="filter-category-select"><option value="all">Show All</option></select>
+            <input type="text" id="filter-value-input" placeholder="Type to filter..." style="display: none;">
         </div>
         <div id="sequence-list" class="panel-list"></div>
     </div>
 
-    <!-- Your App Logic -->
+    <!-- Modals -->
+    <div id="edit-breakdown-modal" class="modal"></div>
+    <div id="project-info-modal" class="modal"></div>
+    <div id="info-modal" class="modal"></div>
+    <div id="about-modal" class="modal"></div>
+
     <script src="script.js" defer></script>
 </body>
 </html>
+
