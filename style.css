@@ -107,11 +107,21 @@ button { padding: 10px 20px; border-radius: 6px; font-size: 1rem; font-weight: 6
 .panel-sort { flex-grow: 1; background-color: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 4px; padding: 4px 6px; font-size: 0.8rem; }
 .panel-list { overflow-y: auto; padding: 10px; flex-grow: 1; }
 .sequence-item, .schedule-break-item {
-    display: block; width: 100%; padding: 12px 15px; background: none; border: none;
-    color: var(--text-color); text-align: left; border-radius: 6px; font-size: 1rem;
+    /* MODIFIED: Changed to flex for button alignment */
+    display: flex; 
+    justify-content: space-between;
+    align-items: center;
+    width: 100%; 
+    padding: 12px 15px; 
+    background: none; 
+    border: none;
+    color: var(--text-color); 
+    text-align: left; 
+    border-radius: 6px; 
+    font-size: 1rem;
     box-sizing: border-box;
+    cursor: grab;
 }
-.sequence-item, .schedule-break-item { cursor: grab; }
 .sequence-item:hover { background-color: var(--background-color); }
 .sequence-item.active { background-color: var(--primary-color); font-weight: bold; }
 .schedule-break-item {
@@ -120,6 +130,32 @@ button { padding: 10px 20px; border-radius: 6px; font-size: 1rem; font-weight: 6
     margin-top: 10px;
 }
 .sortable-ghost { opacity: 0.4; background: var(--primary-color); }
+
+/* NEW: Styles for the name and edit button in the panel */
+.panel-item-name {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
+}
+.edit-item-btn {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 5px;
+    margin-left: 5px;
+    opacity: 0.6;
+    transition: opacity 0.2s, color 0.2s;
+    flex-shrink: 0;
+}
+.edit-item-btn:hover {
+    opacity: 1;
+    color: var(--primary-color);
+}
+
 
 /* --- Modal Styles --- */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); animation: fadeIn 0.3s; }
