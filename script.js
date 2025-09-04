@@ -236,7 +236,7 @@ function resetFilter() {
 }
 
 // =================================================================
-// --- CORE SCHEDULE FUNCTIONS (EXCLUDING RENDERER) ---
+// --- CORE SCHEDULE FUNCTIONS ---
 // =================================================================
 function handleAddScene(e) {
     e.preventDefault();
@@ -266,6 +266,47 @@ function handleAddScene(e) {
     document.getElementById('scene-contact').value = lastContactPerson;
 }
 
+function renderSchedule() {
+    const container = document.getElementById('scene-strips-container');
+    const display = document.getElementById('active-sequence-display');
+    container.innerHTML = '';
+    const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+    if (!activeSequence || activeSequence.type !== 'sequence') {
+        display.textContent = 'No active sequence. Create or select a sequence.';
+        return;
+    }
+    display.textContent = `Current Sequence: ${activeSequence.name}`;
+    const scenesToRender = getVisibleScenes();
+    if (scenesToRender.length === 0 && activeFilter.type !== 'all') {
+        container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes match the current filter.</p>`;
+    } else {
+        scenesToRender.forEach(scene => {
+            const stripWrapper = document.createElement('div');
+            stripWrapper.className = 'scene-strip-wrapper';
+            const statusClass = scene.status.replace(/\s+/g, '-').toLowerCase();
+            stripWrapper.innerHTML = `
+                <div class="scene-strip" id="scene-strip-${scene.id}">
+                    <div class="strip-item"><strong>#${scene.number}</strong></div><div class="strip-item">${scene.heading}</div>
+                    <div class="strip-item">${formatDateDDMMYYYY(scene.date)}</div><div class="strip-item">${formatTime12Hour(scene.time)}</div>
+                    <div class="strip-item">${scene.type}. ${scene.location}</div>
+                    <div class="strip-item">Pages: <strong>${scene.pages || 'N/A'}</strong></div>
+                    <div class="strip-item">Duration: <strong>${scene.duration || 'N/A'}</strong></div>
+                    <div class="strip-item">Cast: <strong>${scene.cast || 'N/A'}</strong></div>
+                    <div class="strip-item">Equipment: <strong>${scene.equipment || 'N/A'}</strong></div>
+                    <div class="strip-item"><span class="strip-status ${statusClass}">${scene.status}</span></div>
+                </div>
+                <div class="scene-actions">
+                    <button class="edit-btn-strip" title="Edit Scene"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="share-btn-strip" title="Share as Image"><i class="fas fa-share-alt"></i></button>
+                </div>
+            `;
+            stripWrapper.querySelector('.edit-btn-strip').addEventListener('click', () => openEditModal(scene.id));
+            stripWrapper.querySelector('.share-btn-strip').addEventListener('click', () => shareScene(scene.id));
+            container.appendChild(stripWrapper);
+        });
+    }
+}
+
 function deleteScene(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence) return;
@@ -275,144 +316,12 @@ function deleteScene(id) {
 }
 
 // =================================================================
-// --- VIRTUAL SCROLLING & RENDERING (NEW IMPLEMENTATION) ---
-// =================================================================
-
-// Constants for our virtual scroller. Adjust these if you change the CSS.
-const ITEM_HEIGHT = 68; // The height of a single scene strip wrapper in pixels (padding + content + gap).
-const VISIBLE_ITEMS_BUFFER = 5; // How many extra items to render above/below the viewport to prevent flickering.
-
-/**
- * Creates the HTML for a single scene strip and positions it absolutely.
- * @param {object} scene - The scene data object.
- * @param {number} index - The index of the scene in the full list.
- * @returns {string} - The HTML string for the scene strip wrapper.
- */
-function createSceneStripHTML(scene, index) {
-    const statusClass = scene.status.replace(/\s+/g, '-').toLowerCase();
-    const topPosition = index * ITEM_HEIGHT;
-
-    // We use `transform` for positioning as it's more performant for animations/scrolling.
-    // We add the scene's unique ID to the buttons for our event listeners.
-    return `
-        <div class="scene-strip-wrapper" style="position: absolute; top: 0; left: 8px; right: 8px; height: ${ITEM_HEIGHT - 8}px; transform: translateY(${topPosition}px);">
-            <div class="scene-strip" id="scene-strip-${scene.id}">
-                <div class="strip-item"><strong>#${scene.number}</strong></div><div class="strip-item">${scene.heading}</div>
-                <div class="strip-item">${formatDateDDMMYYYY(scene.date)}</div><div class="strip-item">${formatTime12Hour(scene.time)}</div>
-                <div class="strip-item">${scene.type}. ${scene.location}</div>
-                <div class="strip-item">Pages: <strong>${scene.pages || 'N/A'}</strong></div>
-                <div class="strip-item">Duration: <strong>${scene.duration || 'N/A'}</strong></div>
-                <div class="strip-item">Cast: <strong>${scene.cast || 'N/A'}</strong></div>
-                <div class="strip-item">Equipment: <strong>${scene.equipment || 'N/A'}</strong></div>
-                <div class="strip-item"><span class="strip-status ${statusClass}">${scene.status}</span></div>
-            </div>
-            <div class="scene-actions">
-                <button class="edit-btn-strip" data-scene-id="${scene.id}" title="Edit Scene"><i class="fas fa-pencil-alt"></i></button>
-                <button class="share-btn-strip" data-scene-id="${scene.id}" title="Share as Image"><i class="fas fa-share-alt"></i></button>
-            </div>
-        </div>
-    `;
-}
-
-/**
- * Sets up and manages the virtual scrolling for the scene list.
- * This function replaces the old, inefficient renderSchedule.
- */
-function renderSchedule() {
-    const container = document.getElementById('scene-strips-container');
-    const display = document.getElementById('active-sequence-display');
-    
-    // Detach any previous scroll listener to prevent memory leaks
-    if (container.scrollHandler) {
-        container.removeEventListener('scroll', container.scrollHandler);
-    }
-    
-    container.innerHTML = ''; // Clear previous content
-
-    const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
-    if (!activeSequence || activeSequence.type !== 'sequence') {
-        display.textContent = 'No active sequence. Create or select a sequence.';
-        return;
-    }
-
-    display.textContent = `Current Sequence: ${activeSequence.name}`;
-    const scenesToRender = getVisibleScenes();
-
-    if (scenesToRender.length === 0) {
-        if (activeFilter.type !== 'all') {
-            container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes match the current filter.</p>`;
-        }
-        return;
-    }
-
-    // 1. Create the tall "sizer" div that creates the scrollbar
-    const sizer = document.createElement('div');
-    sizer.style.height = `${scenesToRender.length * ITEM_HEIGHT}px`;
-    sizer.style.position = 'relative';
-    sizer.style.opacity = '0';
-    container.appendChild(sizer);
-
-    // 2. The core update function, triggered on scroll
-    const updateVisibleItems = () => {
-        const scrollTop = container.scrollTop;
-        const containerHeight = container.clientHeight;
-        
-        // Calculate which items should be in the "window"
-        let startIndex = Math.floor(scrollTop / ITEM_HEIGHT);
-        let endIndex = Math.min(scenesToRender.length - 1, Math.ceil((scrollTop + containerHeight) / ITEM_HEIGHT));
-
-        // Apply a buffer to render items slightly off-screen
-        startIndex = Math.max(0, startIndex - VISIBLE_ITEMS_BUFFER);
-        endIndex = Math.min(scenesToRender.length - 1, endIndex + VISIBLE_ITEMS_BUFFER);
-
-        let visibleHTML = '';
-        for (let i = startIndex; i <= endIndex; i++) {
-            visibleHTML += createSceneStripHTML(scenesToRender[i], i);
-        }
-        
-        // Use a wrapper for the visible items
-        const renderWrapper = document.createElement('div');
-        renderWrapper.innerHTML = visibleHTML;
-        
-        // Replace previous items with the new "window" of items
-        while (container.firstChild && container.firstChild !== sizer) {
-            container.removeChild(container.firstChild);
-        }
-        container.insertBefore(renderWrapper, sizer);
-    };
-
-    // Attach the new scroll handler
-    container.scrollHandler = updateVisibleItems;
-    container.addEventListener('scroll', container.scrollHandler);
-
-    // Initial render
-    updateVisibleItems();
-    
-    // Add a single event listener to the container for button clicks (Event Delegation)
-    // This is more efficient than adding a listener to every single button.
-    container.onclick = function(event) {
-        const target = event.target.closest('button');
-        if (!target) return;
-
-        const sceneId = parseInt(target.dataset.sceneId, 10);
-        if (!sceneId) return;
-
-        if (target.classList.contains('edit-btn-strip')) {
-            openEditModal(sceneId);
-        } else if (target.classList.contains('share-btn-strip')) {
-            shareScene(sceneId);
-        }
-    };
-}
-
-// =================================================================
 // --- DATA PERSISTENCE & PROJECT FILES ---
 // =================================================================
 function saveProjectData(isBackup = false) {
     const key = isBackup ? 'projectData_backup' : 'projectData';
     localStorage.setItem(key, JSON.stringify(projectData));
 }
-
 function loadProjectData() {
     let savedData = localStorage.getItem('projectData');
     const backupData = localStorage.getItem('projectData_backup');
@@ -438,7 +347,6 @@ function loadProjectData() {
     renderSchedule();
     renderSequencePanel();
 }
-
 function clearProject() {
     if (confirm('Are you sure you want to clear the entire project? This action cannot be undone.')) {
         projectData = { panelItems: [], activeItemId: null, projectInfo: {} };
@@ -448,7 +356,6 @@ function clearProject() {
         renderSequencePanel();
     }
 }
-
 function saveProjectFile() {
      try {
         const projectInfo = projectData.projectInfo || {};
@@ -468,7 +375,6 @@ function saveProjectFile() {
         alert("Could not save project file. See console for details.");
     }
 }
-
 function openProjectFile(event) {
     const file = event.target.files[0];
     if (!file) { return; }
@@ -517,9 +423,7 @@ function openProjectModal() {
     document.getElementById('contact-email').value = projectInfo.contactEmail || '';
     document.getElementById('project-info-modal').style.display = 'block';
 }
-
 function closeProjectModal() { document.getElementById('project-info-modal').style.display = 'none'; }
-
 function handleSaveProjectInfo() {
     projectData.projectInfo = {
         prodName: document.getElementById('prod-name').value, directorName: document.getElementById('director-name').value,
@@ -528,7 +432,6 @@ function handleSaveProjectInfo() {
     saveProjectData();
     closeProjectModal();
 }
-
 function openEditModal(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence) return;
@@ -549,9 +452,7 @@ function openEditModal(id) {
     document.getElementById('edit-scene-contact').value = scene.contact;
     document.getElementById('edit-scene-modal').style.display = 'block';
 }
-
 function closeEditModal() { document.getElementById('edit-scene-modal').style.display = 'none'; }
-
 function handleSaveChanges() {
     const sceneId = parseInt(document.getElementById('edit-scene-id').value);
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
@@ -571,7 +472,6 @@ function handleSaveChanges() {
     renderSchedule();
     closeEditModal();
 }
-
 function handleDeleteFromModal() {
     if(confirm("Are you sure you want to delete this scene?")) {
         const sceneId = parseInt(document.getElementById('edit-scene-id').value);
@@ -587,7 +487,9 @@ function saveAsExcel(isFullProject = false) {
     const projectInfo = projectData.projectInfo || {};
     const workbook = XLSX.utils.book_new();
 
+    // This helper function creates a single, nicely formatted sheet.
     const createSheet = (scenes, sheetName) => {
+        // Find the schedule break (e.g., DAY 1) associated with this sequence
         let scheduleBreakName = 'Uncategorized';
         const sequenceIndex = projectData.panelItems.findIndex(item => item.name === sheetName && item.type === 'sequence');
         if (sequenceIndex > -1) {
@@ -598,6 +500,8 @@ function saveAsExcel(isFullProject = false) {
                 }
             }
         }
+
+        // Define all headers
         const projectHeader = [
             ["Production:", projectInfo.prodName || 'N/A', null, "Director:", projectInfo.directorName || 'N/A'],
             ["Contact:", projectInfo.contactNumber || 'N/A', null, "Email:", projectInfo.contactEmail || 'N/A'],
@@ -607,17 +511,25 @@ function saveAsExcel(isFullProject = false) {
             []
         ];
         const tableHeader = ['Scene #', 'Scene Heading', 'Date', 'Time', 'Type', 'Location', 'Pages', 'Duration', 'Status', 'Cast', 'Key Equipment', 'Contact'];
+        
+        // Format scene data into an array of arrays
         const tableBody = scenes.map(s => [
             s.number, s.heading, formatDateDDMMYYYY(s.date), s.time, s.type, s.location, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact
         ]);
+
+        // Combine all data for the sheet
         const fullSheetData = projectHeader.concat([tableHeader]).concat(tableBody);
         const worksheet = XLSX.utils.aoa_to_sheet(fullSheetData);
+
+        // Add cell merges for a professional look
         const numCols = tableHeader.length - 1;
         worksheet['!merges'] = [
             { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } }, { s: { r: 0, c: 4 }, e: { r: 0, c: numCols } },
             { s: { r: 1, c: 1 }, e: { r: 1, c: 2 } }, { s: { r: 1, c: 4 }, e: { r: 1, c: numCols } },
             { s: { r: 3, c: 0 }, e: { r: 3, c: numCols } }, { s: { r: 4, c: 0 }, e: { r: 4, c: numCols } }
         ];
+        
+        // Set column widths for readability
         if (scenes.length > 0) {
              const colWidths = tableHeader.map((_, i) => {
                 const allValues = [tableHeader[i] || ''].concat(tableBody.map(row => (row[i] || '').toString()));
@@ -626,28 +538,51 @@ function saveAsExcel(isFullProject = false) {
             });
             worksheet['!cols'] = colWidths;
         }
+
         return worksheet;
     };
 
+    // LOGIC FOR "Save Full Project Excel"
     if (isFullProject) {
+        console.log("Starting full project export...");
+
+        // This loop goes through every item you have in the Sort Panel.
         projectData.panelItems.forEach(item => {
+            // It checks if the item is a sequence and if it actually contains scenes.
+            // Sequences without scenes will be skipped.
             if (item.type === 'sequence' && item.scenes && item.scenes.length > 0) {
+                console.log(`Found sequence with scenes: "${item.name}". Creating sheet...`);
+                
+                // A new sheet is created for this sequence.
                 const worksheet = createSheet(item.scenes, item.name);
+                
+                // The new sheet is appended to the Excel workbook. This does NOT overwrite previous sheets.
                 const safeSheetName = item.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31);
                 XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
             }
         });
+        
+        // After checking all sequences, we check if any sheets were created.
         if(workbook.SheetNames.length === 0){ 
             alert("Export failed: No sequences with scenes were found in your project."); 
             return;
         }
+        
+        console.log(`Exporting workbook with ${workbook.SheetNames.length} sheets: ${workbook.SheetNames.join(', ')}`);
+
+        // The workbook, now containing all the sheets, is saved to a single file.
         XLSX.writeFile(workbook, `${(projectInfo.prodName || 'FullProject').replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
+        
+        // This new confirmation alert gives you clear feedback.
         alert(`Successfully exported ${workbook.SheetNames.length} sequence(s) into a single Excel file.\n\nPlease check the tabs at the bottom of the Excel window to see all the sheets.`);
+
+    // LOGIC FOR "Export Visible Scenes" from the Sort Panel (this logic remains unchanged)
     } else {
         const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
         if (!activeSequence) { alert("Please select a sequence to export."); return; }
         const scenesToExport = getVisibleScenes();
         if (scenesToExport.length === 0) { alert(`No visible scenes in "${activeSequence.name}" to export.`); return; }
+        
         const worksheet = createSheet(scenesToExport, activeSequence.name);
         XLSX.utils.book_append_sheet(workbook, worksheet, activeSequence.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31));
         XLSX.writeFile(workbook, `${activeSequence.name.replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
@@ -689,23 +624,23 @@ async function shareScene(id) {
                 <h1>Scene ${scene.number || 'N/A'}</h1>
                 <h2>${scene.heading || 'N/A'}</h2>
             </div>
-            <div class="share-card-item"><strong>Date:</strong> ${formatDateDDMMYYYY(scene.date)}</div>
-            <div class="share-card-item"><strong>Time:</strong> ${formatTime12Hour(scene.time)}</div>
+             <div class="share-card-item"><strong>Pages:</strong> ${scene.pages || 'N/A'}</div>
             <div class="share-card-item"><strong>Location:</strong> ${scene.type}. ${scene.location}</div>
             <div class="share-card-item"><strong>Cast:</strong> ${scene.cast || 'N/A'}</div>
+             <div class="share-card-item"><strong>Date:</strong> ${formatDateDDMMYYYY(scene.date)}</div>
+            <div class="share-card-item"><strong>Time:</strong> ${formatTime12Hour(scene.time)}</div>
             <div class="share-card-item"><strong>Contact:</strong> ${scene.contact || 'N/A'}</div>
-            <div class="share-card-item"><strong>Pages:</strong> ${scene.pages || 'N/A'}</div>
             <div class="share-card-footer">
                 <div class="footer-project-info">
                     <div><strong>${projectInfo.prodName || 'Production'}</strong></div>
                     <div>${projectInfo.directorName ? 'Dir: ' + projectInfo.directorName : ''}</div>
                 </div>
-                <div class="footer-brand">Powered by ToshooT</div>
+                <div class="footer-brand">ToassisT App</div>
             </div>
         </div>
     `;
     
-    try {
+   try {
         const canvas = await html2canvas(template, { useCORS: true, backgroundColor: '#1f2937' });
         canvas.toBlob(async (blob) => {
             const fileName = `Scene_${scene.number}.png`;
@@ -763,4 +698,3 @@ function toggleAutoSave() {
         alert('Auto-save is now ON. Your project will be saved to this browser\'s storage every 2 minutes.');
     }
 }
-
