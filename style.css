@@ -1,170 +1,857 @@
-/* --- Global Styles & Fonts --- */
 :root {
     --primary-color: #3b82f6; --background-color: #111827; --surface-color: #1f2937;
-    --text-color: #f3f4f6; --border-color: #374151; --success-color: #22c55e;
-    --danger-color: #ef4444; --warning-color: #f59e0b;
+    --text-color: #f3f4f6; --border-color: #374151; --danger-color: #ef4444; --success-color: #22c55e;
+    --color-cast: #f59e0b; --color-props: #10b981; --color-costumes: #8b5cf6; --color-makeup: #ec4899;
+    --color-vehicles: #6366f1; --color-sfx: #d946ef; --color-sound: #0ea5e9; --color-stunts: #f43f5e;
+    --color-setDressing: #a855f7; --color-equipment: #22d3ee; --color-technicians: #34d399; --color-misc: #78716c;
 }
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--background-color); color: var(--text-color); margin: 0; font-size: 16px;
+    background-color: var(--background-color); color: var(--text-color); margin: 0;
 }
-
-/* --- Header Styles --- */
 .page-header {
-    display: flex; justify-content: space-between; align-items: center;
-    background-color: var(--surface-color); padding: 15px 20px; border-bottom: 2px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: center; background-color: var(--surface-color); padding: 15px 20px; border-bottom: 2px solid var(--border-color);
 }
-.page-header .header-left, .page-header .header-right {
-    flex: 1; display: flex; align-items: center; gap: 15px;
-}
+.page-header .header-left, .page-header .header-right { flex: 1; display: flex; align-items: center; gap: 15px; }
 .page-header .header-right { justify-content: flex-end; }
 .page-header .header-center { flex: 2; text-align: center; }
-#app-title {
-    font-family: 'Roboto', sans-serif; margin: 0; font-size: 1.8rem; color: var(--primary-color);
-}
-
-/* --- Layout & Form Styles --- */
-.container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
-.section { background-color: var(--surface-color); padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); }
-.new-scene-form { border-top: 2px solid var(--border-color); margin-top: 30px; padding-top: 20px; }
-.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 20px; }
-input, select { width: 100%; padding: 10px; background-color: #374151; border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color); font-size: 0.95rem; box-sizing: border-box; }
-input::placeholder { color: #9ca3af; }
-input[type="date"], input[type="time"] { color-scheme: dark; }
-#active-sequence-display {
-    text-align: center; margin-bottom: 20px; font-size: 1.2rem; color: var(--primary-color);
-    font-weight: 600; border: 1px solid var(--border-color); background-color: var(--background-color);
-    padding: 10px; border-radius: 8px;
-}
-
-/* --- Floating Label Styles --- */
-.input-wrapper { position: relative; }
-.input-wrapper label {
-    position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: #9ca3af;
-    pointer-events: none; transition: all 0.2s ease-in-out; background-color: #374151; padding: 0 4px;
-}
-.input-wrapper .has-label:focus ~ label, .input-wrapper .has-label:valid ~ label {
-    top: -8px; left: 8px; transform: translateY(0); font-size: 0.75rem; color: var(--primary-color);
-}
-
-/* --- Buttons & Dropdowns --- */
-button { padding: 10px 20px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; border: none; }
+#app-title { font-family: 'Roboto', sans-serif; margin: 0; font-size: 1.8rem; color: var(--primary-color); }
+.container { max-width: 1600px; margin: 20px auto; padding: 0 20px; }
+.section { background-color: var(--surface-color); padding: 25px; border-radius: 8px; }
+.new-item-form { border-top: 2px solid var(--border-color); margin-top: 30px; padding-top: 20px; }
+.scene-details-form { padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+.form-grid-condensed { display: grid; grid-template-columns: 1fr 1fr 3fr 1fr; gap: 15px; align-items: center; }
+input, select { width: 100%; padding: 10px; background-color: #374151; border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color); font-size: 0.95rem; box-sizing: border-box; font-family: inherit; }
+.breakdown-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
+.breakdown-entry-category { background-color: var(--background-color); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; border-top: 4px solid; }
+.breakdown-entry-category h4 { margin: 0 0 15px 0; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+.add-item-form { display: flex; gap: 10px; margin-bottom: 10px; }
+.add-item-form.producer-form input.item-name-input { flex-grow: 1; }
+.add-item-form.producer-form input.item-cost-input { width: 80px; }
+.add-item-form button { padding: 8px 12px; font-size: 0.9rem; }
+.item-list-entry { list-style: none; padding: 0; margin: 0; min-height: 40px; overflow-y: auto; max-height: 150px; }
+.tagged-item-entry { background-color: var(--surface-color); padding: 6px 10px; border-radius: 4px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; gap: 10px; }
+.tagged-item-name { flex-grow: 1; word-break: break-all; }
+.tagged-item-cost { font-weight: bold; color: var(--success-color); }
+.item-actions button { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 0.9rem; padding: 2px 4px;}
+.btn-add-breakdown { width: 100%; padding: 15px; font-size: 1.2rem; margin-top: 10px; }
+button, .btn-secondary { padding: 10px 20px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; border: none; }
 .btn-primary { background-color: var(--primary-color); color: white; }
+.btn-secondary { background-color: #4b5563; color: white; }
 .btn-danger { background-color: var(--danger-color); color: white; }
 .icon-btn { background: none; border: none; color: #9ca3af; font-size: 1.5rem; cursor: pointer; }
 .icon-btn.small { font-size: 1.2rem; }
 .dropdown-container { position: relative; display: inline-block; }
-.dropdown-content {
-    display: none; position: absolute; background-color: #374151;
-    min-width: 240px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); z-index: 10;
-    border-radius: 6px; overflow: hidden; margin-top: 10px; left: 0;
-}
+.dropdown-content { display: none; position: absolute; background-color: #374151; min-width: 240px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); z-index: 10; border-radius: 6px; overflow: hidden; margin-top: 10px; left: 0; }
 .dropdown-content a { color: var(--text-color); padding: 12px 20px; text-decoration: none; display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .dropdown-content a:hover { background-color: var(--primary-color); }
+.dropdown-content a.active-mode { background-color: var(--primary-color); font-weight: bold; }
 .dropdown-header { padding: 8px 20px; font-size: 0.8rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; cursor: default; }
-.dropdown-item { padding-left: 35px !important; }
 .dropdown-divider { border: none; height: 1px; background-color: var(--border-color); margin: 8px 0; }
 .show { display: block; }
 .auto-save-status { margin-left: auto; font-size: 0.8rem; padding: 2px 8px; border-radius: 10px; }
 .auto-save-status.off { background-color: var(--danger-color); color: white; }
 .auto-save-status.on { background-color: var(--success-color); color: white; }
-
-/* --- REPLACE this entire rule in your style.css --- */
-.scene-strips-container {
-    /* The new, crucial properties for virtual scrolling: */
-    height: 60vh; /* Sets a fixed height. Use vh (viewport height) to make it responsive. */
-    overflow-y: auto; /* This makes the container itself scrollable. */
-    position: relative; /* Essential for positioning the items inside. */
-
-    /* These are your original properties: */
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.strip-item { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: #d1d5db; padding-right: 15px; border-right: 1px solid var(--border-color); }
-.strip-item:last-of-type { border-right: none; padding-right: 0; }
-.strip-item strong { color: var(--text-color); font-weight: 600; }
-.strip-status { padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
-.strip-status.pending { background-color: var(--warning-color); color: #111827; }
-.strip-status.not-shot { background-color: var(--danger-color); color: var(--text-color); }
-.strip-status.done { background-color: var(--success-color); color: var(--text-color); }
-.scene-actions { display: flex; align-items: center; gap: 10px; }
-.share-btn-strip { background: none; border: none; color: var(--text-color); font-size: 1.2rem; cursor: pointer; padding: 0; line-height: 1; opacity: 0.8; }
-.share-btn-strip:hover { opacity: 1; color: var(--primary-color); }
-.edit-btn-strip { background: none; border: none; color: var(--text-color); font-size: 1.2rem; cursor: pointer; padding: 0; line-height: 1; opacity: 0.8; }
-.edit-btn-strip:hover { opacity: 1; color: var(--primary-color); }
-
-
-/* --- Side Panel for Sequences --- */
-.side-panel {
-    position: fixed; top: 0; right: -320px; width: 300px; height: 100%;
-    background-color: var(--surface-color); box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-    z-index: 2000; transition: right 0.3s ease-in-out; display: flex; flex-direction: column;
-}
+.top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+#active-sequence-display { font-size: 1.2rem; color: var(--primary-color); font-weight: 600; }
+#breakdown-strips-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 30px; }
+.breakdown-strip-wrapper { display: flex; align-items: center; gap: 10px; }
+.breakdown-strip { flex-grow: 1; background-color: var(--background-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px 15px; display: flex; align-items: center; gap: 15px; overflow-x: auto; white-space: nowrap; }
+.strip-item-scene { font-size: 1.1rem; font-weight: bold; color: var(--text-color); padding-right: 15px; border-right: 1px solid var(--border-color); }
+.strip-item-summary { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: #d1d5db; }
+.strip-item-summary .count { font-weight: bold; color: var(--text-color); }
+.strip-item-cost { display: none; align-items: center; gap: 5px; font-size: 0.9rem; font-weight: bold; color: var(--success-color); margin-left: auto; padding-left: 15px; border-left: 1px solid var(--border-color); }
+.producer-mode .strip-item-cost { display: flex; }
+.strip-actions { display: flex; align-items: center; gap: 10px; }
+.strip-actions button { font-size: 1.1rem; padding: 5px; line-height: 1; color: #9ca3af; background: none; border: none; cursor: pointer; }
+.strip-actions button:hover { color: var(--primary-color); }
+.side-panel { position: fixed; top: 0; right: -320px; width: 300px; height: 100%; background-color: var(--surface-color); box-shadow: -5px 0 15px rgba(0,0,0,0.5); z-index: 2000; transition: right 0.3s ease-in-out; display: flex; flex-direction: column; }
 .side-panel.open { right: 0; }
-.panel-header {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
-    padding: 15px; border-bottom: 1px solid var(--border-color);
-}
+.panel-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border-color); }
 .panel-header h3 { margin: 0; }
-.panel-actions { display: flex; align-items: center; gap: 8px; width: 100%; }
-.panel-sort { flex-grow: 1; background-color: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 4px; padding: 4px 6px; font-size: 0.8rem; }
+.panel-header-actions { display: flex; gap: 8px; }
+.panel-filter-section { padding: 15px; border-top: 1px solid var(--border-color); }
+.panel-filter-section h4 { margin: 0 0 10px; }
+.panel-filter-section input { margin-top: 10px; }
 .panel-list { overflow-y: auto; padding: 10px; flex-grow: 1; }
-.sequence-item, .schedule-break-item {
-    display: block; width: 100%; padding: 12px 15px; background: none; border: none;
-    color: var(--text-color); text-align: left; border-radius: 6px; font-size: 1rem;
-    box-sizing: border-box;
-}
-.sequence-item, .schedule-break-item { cursor: grab; }
+.sequence-item, .schedule-break-item { display: block; width: 100%; box-sizing: border-box; padding: 12px 15px; background: none; border: none; color: var(--text-color); text-align: left; border-radius: 6px; font-size: 1rem; cursor: pointer; }
 .sequence-item:hover { background-color: var(--background-color); }
 .sequence-item.active { background-color: var(--primary-color); font-weight: bold; }
-.schedule-break-item {
-    background-color: var(--background-color); font-weight: bold;
-    text-transform: uppercase; font-size: 0.8rem; color: #9ca3af;
-    margin-top: 10px;
-}
+.schedule-break-item { background-color: var(--background-color); font-weight: bold; text-transform: uppercase; font-size: 0.8rem; color: #9ca3af; margin-top: 10px; cursor: default; }
 .sortable-ghost { opacity: 0.4; background: var(--primary-color); }
-
-/* --- Modal Styles --- */
+.sequence-total { display: none; margin-top: 20px; padding: 15px; background-color: var(--background-color); border-radius: 8px; text-align: right; font-size: 1.2rem; font-weight: bold; }
+.producer-mode .sequence-total { display: block; }
+.sequence-total span { color: var(--success-color); }
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); animation: fadeIn 0.3s; }
-.modal-content {
-    background-color: var(--surface-color); margin: 10% auto; padding: 30px;
-    border: 1px solid var(--border-color); width: 90%; max-width: 700px;
-    border-radius: 12px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-}
-.modal-content.small { max-width: 450px; }
+.modal-content { background-color: var(--surface-color); margin: 5% auto; padding: 30px; border: 1px solid var(--border-color); width: 90%; max-width: 1200px; border-radius: 12px; position: relative; max-height: 85vh; display: flex; flex-direction: column; }
+.modal-content.small { max-width: 500px; }
+.modal-body { overflow-y: auto; }
+.info-content p { line-height: 1.6; margin: 0 0 12px; }
+.info-content strong { color: var(--primary-color); display: inline-block; width: 120px; }
 .close-btn { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color); }
 .modal-form { display: flex; flex-direction: column; gap: 15px; }
-.modal-form input { background-color: var(--background-color); }
-.modal-actions { display: flex; justify-content: space-between; margin-top: 20px; }
-.info-content p { line-height: 1.6; margin: 0 0 10px; }
-.info-content strong { color: var(--primary-color); }
-.about-text { font-size: 1.2rem; text-align: center; }
+.estimation-header { text-align: center; margin-bottom: 25px; }
+.estimation-header h2 { margin: 0; }
+.estimation-header p { margin: 5px 0 0; color: #9ca3af; }
+#estimation-table-container { max-height: 60vh; overflow-y: auto; }
+.estimation-table { width: 100%; border-collapse: collapse; }
+.estimation-table th, .estimation-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+.estimation-table th { background-color: var(--background-color); }
+.estimation-table .category-row td { background-color: #2a374a; font-weight: bold; font-size: 1.1rem; color: var(--primary-color); }
+.estimation-table .cost-cell { text-align: right; font-weight: bold; color: var(--success-color); }
+.estimation-table .subtotal-row td { font-weight: bold; border-top: 2px solid var(--border-color); }
+.total-cost-final { margin-top: 25px; padding: 20px; background-color: var(--background-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+.total-cost-final h3 { margin: 0; font-size: 1.8rem; font-weight: 700; }
+.total-cost-final span { color: var(--success-color); }
+.export-buttons { display: flex; gap: 10px; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 768px) { .form-grid-condensed { grid-template-columns: 1fr 1fr; gap: 10px; } .breakdown-grid { grid-template-columns: 1fr; } .breakdown-strip { flex-wrap: wrap; white-space: normal; } .page-header { flex-wrap: wrap; } .total-cost-final { flex-direction: column; gap: 15px; align-items: stretch; text-align: center; } }
+```
 
-/* --- Share Card Template Styles --- */
-#share-card-template { position: absolute; left: -9999px; top: auto; width: 400px; background-color: #1f2937; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; border-radius: 12px; border: 1px solid #3b82f6; }
-.share-card-content { padding: 25px; display: flex; flex-direction: column; gap: 10px; }
-.share-card-header { text-align: left; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 8px; }
-.share-card-header h1 { margin: 0; font-size: 2.4rem; color: var(--primary-color); }
-.share-card-header h2 { margin: 5px 0 0; font-size: 1.3rem; font-weight: 400; color: #d1d5db; }
-.share-card-item { font-size: 1.2rem; line-height: 1.5; }
-.share-card-item strong { color: #9ca3af; font-weight: 600; margin-right: 8px; }
-.share-card-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); }
-.footer-project-info { text-align: left; line-height: 1.5; }
-.footer-project-info div { font-size: 0.9rem; }
-.footer-brand { text-align: right; font-weight: 600; font-size: 0.75rem; opacity: 0.5; }
+### **--- END OF `style.css` ---**
 
-/* --- Mobile Responsiveness --- */
-@media (max-width: 900px) {
-    #app-title { font-size: 1.5rem; }
-    .scene-strip { flex-wrap: wrap; white-space: normal; gap: 8px 15px; }
-    .strip-item { border-right: none; padding-right: 0; }
-}
-@media (max-width: 768px) {
-    body { padding: 5px; }
-    .page-header { flex-wrap: wrap; padding: 10px 15px; }
-    .form-grid { grid-template-columns: 1fr; }
-    .modal-content { margin: 20% auto; padding: 20px; width: 95%; }
-    .modal-actions { flex-direction: column-reverse; gap: 10px; }
-}
+***
+
+### **--- START OF `script.js` ---**
+
+```
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("Script Breakdown Initializing...");
+
+    const CATEGORIES = [
+        { key: 'cast', title: 'Cast', icon: 'fa-user-ninja', color: 'var(--color-cast)' },
+        { key: 'props', title: 'Props', icon: 'fa-magic-wand-sparkles', color: 'var(--color-props)' },
+        { key: 'costumes', title: 'Costumes', icon: 'fa-shirt', color: 'var(--color-costumes)' },
+        { key: 'makeup', title: 'Hair & Makeup', icon: 'fa-palette', color: 'var(--color-makeup)' },
+        { key: 'setDressing', title: 'Set Dressing', icon: 'fa-couch', color: 'var(--color-setDressing)' },
+        { key: 'vehicles', title: 'Vehicles', icon: 'fa-car', color: 'var(--color-vehicles)' },
+        { key: 'stunts', title: 'Stunts', icon: 'fa-bolt', color: 'var(--color-stunts)' },
+        { key: 'sfx', title: 'Special Effects', icon: 'fa-bomb', color: 'var(--color-sfx)' },
+        { key: 'sound', title: 'Sound', icon: 'fa-volume-high', color: 'var(--color-sound)' },
+        { key: 'equipment', title: 'Equipment', icon: 'fa-camera-retro', color: 'var(--color-equipment)' },
+        { key: 'technicians', title: 'Technicians', icon: 'fa-helmet-safety', color: 'var(--color-technicians)' },
+        { key: 'misc', title: 'Miscellaneous', icon: 'fa-box-archive', color: 'var(--color-misc)' },
+    ];
+
+    let projectData = { panelItems: [], activeItemId: null, projectInfo: {}, currency: 'USD' };
+    let currentBreakdown = {};
+    let currentMode = 'assistant';
+    let currentView = 'breakdown';
+    let autoSaveInterval = null;
+
+    function initialize() {
+        setupEventListeners();
+        populateFilterDropdown();
+        loadProjectData();
+        setMode(localStorage.getItem('breakdownAppMode') || 'assistant');
+        createEntryGrid('breakdown-entry-grid', currentBreakdown);
+        initializeDragAndDrop();
+    }
+
+    function setupEventListeners() {
+        const safeAddListener = (id, event, handler) => {
+            const element = document.getElementById(id);
+            if (element) element.addEventListener(event, handler);
+        };
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        if (hamburgerBtn) hamburgerBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdownMenu.classList.toggle('show'); });
+        document.addEventListener('click', (event) => {
+            if (hamburgerBtn && dropdownMenu.classList.contains('show') && !hamburgerBtn.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+        
+        safeAddListener('project-info-btn', 'click', openProjectInfoModal);
+        safeAddListener('new-sequence-btn', 'click', handleNewSequence);
+        safeAddListener('open-project-btn', 'click', () => document.getElementById('file-input').click());
+        safeAddListener('file-input', 'change', openProjectFile);
+        safeAddListener('save-project-btn', 'click', saveProjectFile);
+        safeAddListener('save-full-excel-btn', 'click', () => saveAsExcel(true));
+        safeAddListener('share-project-btn', 'click', shareProject);
+        safeAddListener('clear-project-btn', 'click', clearProject);
+        safeAddListener('assistant-mode-btn', 'click', () => setMode('assistant'));
+        safeAddListener('producer-mode-btn', 'click', () => setMode('producer'));
+        safeAddListener('auto-save-btn', 'click', toggleAutoSave);
+        safeAddListener('info-btn', 'click', openInfoModal);
+        safeAddListener('about-btn', 'click', openAboutModal);
+        
+        safeAddListener('estimate-btn', 'click', () => showView('estimation'));
+        safeAddListener('sequence-hamburger-btn', 'click', () => document.getElementById('sequence-panel').classList.add('open'));
+        safeAddListener('breakdown-form', 'submit', handleAddBreakdownToSequence);
+        safeAddListener('currency-selector', 'change', (e) => {
+            projectData.currency = e.target.value;
+            saveProjectData();
+            showView(currentView);
+            renderBreakdownStrips();
+        });
+
+        safeAddListener('close-panel-btn', 'click', () => document.getElementById('sequence-panel').classList.remove('open'));
+        safeAddListener('add-schedule-break-btn', 'click', handleAddScheduleBreak);
+        safeAddListener('export-panel-btn', 'click', exportFilteredToExcel);
+        safeAddListener('filter-category-select', 'change', handleFilterChange);
+        safeAddListener('filter-value-input', 'input', () => renderBreakdownStrips());
+        safeAddListener('export-excel-btn', 'click', exportEstimateToExcel);
+        safeAddListener('export-pdf-btn', 'click', exportEstimateToPDF);
+    }
+    
+    function initializeDragAndDrop() {
+        const listContainer = document.getElementById('sequence-list');
+        if (listContainer) {
+            new Sortable(listContainer, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: (evt) => {
+                    const item = projectData.panelItems.splice(evt.oldIndex, 1)[0];
+                    projectData.panelItems.splice(evt.newIndex, 0, item);
+                    saveProjectData();
+                }
+            });
+        }
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        localStorage.setItem('breakdownAppMode', mode);
+        const container = document.getElementById('main-container');
+        const currencyWrapper = document.getElementById('currency-selector-wrapper');
+        const estimateBtn = document.getElementById('estimate-btn');
+        const assistantBtn = document.getElementById('assistant-mode-btn');
+        const producerBtn = document.getElementById('producer-mode-btn');
+        if (mode === 'producer') {
+            container.classList.add('producer-mode');
+            currencyWrapper.style.display = 'block';
+            estimateBtn.style.display = 'block';
+            producerBtn.classList.add('active-mode');
+            assistantBtn.classList.remove('active-mode');
+        } else {
+            container.classList.remove('producer-mode');
+            currencyWrapper.style.display = 'none';
+            estimateBtn.style.display = 'none';
+            assistantBtn.classList.add('active-mode');
+            producerBtn.classList.remove('active-mode');
+            if(currentView === 'estimation') showView('breakdown');
+        }
+        createEntryGrid('breakdown-entry-grid', currentBreakdown);
+        renderBreakdownStrips();
+    }
+    
+    function showView(viewName) {
+        currentView = viewName;
+        const breakdownView = document.getElementById('breakdown-view');
+        const estimationView = document.getElementById('estimation-view');
+        const estimateBtn = document.getElementById('estimate-btn');
+        const title = document.getElementById('app-title');
+
+        if (viewName === 'estimation') {
+            breakdownView.style.display = 'none';
+            estimationView.style.display = 'block';
+            title.textContent = 'Project Estimation';
+            estimateBtn.innerHTML = `<i class="fas fa-clipboard-list"></i>`;
+            estimateBtn.title = "Back to Breakdown";
+            estimateBtn.onclick = () => showView('breakdown');
+            renderEstimationPage();
+        } else {
+            breakdownView.style.display = 'block';
+            estimationView.style.display = 'none';
+            title.textContent = 'Script Breakdown';
+            estimateBtn.innerHTML = `<i class="fas fa-calculator"></i>`;
+            estimateBtn.title = "Project Estimate";
+            estimateBtn.onclick = () => showView('estimation');
+        }
+    }
+
+    function saveProjectData() { localStorage.setItem('scriptBreakdownProjectV2', JSON.stringify(projectData)); }
+
+    function loadProjectData() {
+        const savedData = localStorage.getItem('scriptBreakdownProjectV2');
+        projectData = savedData ? JSON.parse(savedData) : { panelItems: [], activeItemId: null, projectInfo: {}, currency: 'USD' };
+        if (!projectData.panelItems) projectData.panelItems = [];
+        if (!projectData.projectInfo) projectData.projectInfo = {};
+        if (!projectData.currency) projectData.currency = 'USD';
+
+        if (projectData.activeItemId === null && projectData.panelItems.length > 0) {
+            const firstSeq = projectData.panelItems.find(i => i.type === 'sequence');
+            if (firstSeq) projectData.activeItemId = firstSeq.id;
+        }
+        document.getElementById('currency-selector').value = projectData.currency;
+        renderBreakdownStrips();
+        renderSequencePanel();
+    }
+    
+    function clearProject() {
+        if(confirm("Are you sure? This will delete all sequences and breakdowns.")){
+            projectData = { panelItems: [], activeItemId: null, projectInfo: {}, currency: 'USD' };
+            saveProjectData();
+            loadProjectData();
+        }
+    }
+
+    function createEntryGrid(gridId, targetData) {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        grid.innerHTML = '';
+        CATEGORIES.forEach(cat => {
+            if (cat.key === 'misc' && currentMode !== 'producer') {
+                return; 
+            }
+            const isProducer = currentMode === 'producer';
+            const formHTML = isProducer ?
+                `<form class="add-item-form producer-form" data-category="${cat.key}">
+                    <input type="text" placeholder="Item Name" class="item-name-input" required>
+                    <input type="number" placeholder="Cost" min="0" step="0.01" class="item-cost-input">
+                    <button type="submit" class="btn-primary">Add</button>
+                </form>` :
+                `<form class="add-item-form" data-category="${cat.key}">
+                    <input type="text" placeholder="Add element..." required>
+                    <button type="submit" class="btn-primary">Add</button>
+                </form>`;
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'breakdown-entry-category';
+            categoryDiv.style.borderTopColor = cat.color;
+            categoryDiv.innerHTML = `<h4><i class="fas ${cat.icon}"></i> ${cat.title}</h4> ${formHTML} <ul class="item-list-entry" id="list-${gridId}-${cat.key}"></ul>`;
+            grid.appendChild(categoryDiv);
+            categoryDiv.querySelector('.add-item-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const categoryKey = e.target.dataset.category;
+                const nameInput = e.target.querySelector('.item-name-input, input[type="text"]');
+                const costInput = e.target.querySelector('.item-cost-input');
+                if (nameInput.value.trim()) {
+                    if (!targetData[categoryKey]) targetData[categoryKey] = [];
+                    targetData[categoryKey].push({ id: Date.now(), name: nameInput.value.trim(), cost: costInput ? parseFloat(costInput.value) || 0 : 0 });
+                    renderItemList(`list-${gridId}-${cat.key}`, categoryKey, targetData);
+                    nameInput.value = '';
+                    if (costInput) costInput.value = '';
+                }
+            });
+            if (gridId === 'breakdown-entry-grid' && cat.key === 'misc' && (!targetData.misc || targetData.misc.length === 0)) {
+                targetData.misc = [ {id: Date.now()+1, name: "Food", cost: 0}, {id: Date.now()+2, name: "Logistics", cost: 0}, {id: Date.now()+3, name: "Accommodation", cost: 0} ];
+            }
+            renderItemList(`list-${gridId}-${cat.key}`, categoryKey, targetData);
+        });
+    }
+
+    function renderItemList(listId, categoryKey, data) {
+        const list = document.getElementById(listId);
+        if (!list) return;
+        list.innerHTML = '';
+        if (data[categoryKey]) {
+            data[categoryKey].forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'tagged-item-entry';
+                const costHTML = currentMode === 'producer' ? `<span class="tagged-item-cost">${formatCurrency(item.cost)}</span>` : '';
+                li.innerHTML = `<span class="tagged-item-name">${item.name}</span> ${costHTML}
+                    <div class="item-actions">
+                        <button class="edit-item-btn" title="Edit"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="delete-item-btn" title="Delete">&times;</button>
+                    </div>`;
+                li.querySelector('.edit-item-btn').onclick = () => {
+                    const newName = prompt("Enter new name:", item.name);
+                    if (newName !== null) item.name = newName.trim() || item.name;
+                    if (currentMode === 'producer') {
+                        const newCostStr = prompt("Enter new cost:", item.cost || 0);
+                        if (newCostStr !== null) item.cost = parseFloat(newCostStr) || 0;
+                    }
+                    renderItemList(listId, categoryKey, data);
+                    calculateAndRenderSequenceTotal();
+                };
+                li.querySelector('.delete-item-btn').onclick = () => {
+                    data[categoryKey] = data[categoryKey].filter(i => i.id !== item.id);
+                    renderItemList(listId, categoryKey, data);
+                    calculateAndRenderSequenceTotal();
+                };
+                list.appendChild(li);
+            });
+        }
+    }
+
+    function handleAddBreakdownToSequence(e) {
+        e.preventDefault();
+        const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+        if (!activeSequence) { alert("No active sequence. Please create or select one first."); return; }
+        const sceneNumberInput = document.getElementById('scene-number');
+        if (!sceneNumberInput.value.trim()) { alert('Please enter a Scene Number.'); return; }
+        const newBreakdown = { id: Date.now(), sceneNumber: sceneNumberInput.value, sceneType: document.getElementById('scene-type').value, sceneLocation: document.getElementById('scene-location').value, sceneTime: document.getElementById('scene-time').value, ...JSON.parse(JSON.stringify(currentBreakdown)) };
+        if (!activeSequence.breakdowns) activeSequence.breakdowns = [];
+        activeSequence.breakdowns.push(newBreakdown);
+        saveProjectData();
+        renderBreakdownStrips();
+        currentBreakdown = {};
+        document.getElementById('breakdown-form').reset();
+        createEntryGrid('breakdown-entry-grid', currentBreakdown);
+    }
+    
+    function renderBreakdownStrips() {
+        const container = document.getElementById('breakdown-strips-container');
+        const display = document.getElementById('active-sequence-display');
+        const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+        if (!activeSequence) {
+            display.textContent = 'No active sequence. Create one from the side panel.';
+            container.innerHTML = '';
+            calculateAndRenderSequenceTotal();
+            return;
+        }
+        display.textContent = `Current Sequence: ${activeSequence.name}`;
+        container.innerHTML = '';
+        if (!activeSequence.breakdowns) activeSequence.breakdowns = [];
+        const filteredBreakdowns = getFilteredBreakdowns(activeSequence.breakdowns);
+        filteredBreakdowns.forEach(breakdown => {
+            const stripWrapper = document.createElement('div');
+            stripWrapper.className = 'breakdown-strip-wrapper';
+            let summaryHTML = '';
+            let sceneTotalCost = 0;
+            CATEGORIES.forEach(cat => {
+                const items = breakdown[cat.key];
+                if (items && items.length > 0) {
+                    summaryHTML += `<div class="strip-item-summary" style="color:${cat.color};"><i class="fas ${cat.icon}"></i><span class="count">${items.length}</span></div>`;
+                    sceneTotalCost += items.reduce((sum, item) => sum + (item.cost || 0), 0);
+                }
+            });
+            const costHTML = `<div class="strip-item-cost">${formatCurrency(sceneTotalCost)}</div>`;
+            stripWrapper.innerHTML = `<div class="breakdown-strip"><div class="strip-item-scene">#${breakdown.sceneNumber} - ${breakdown.sceneLocation} (${breakdown.sceneTime})</div>${summaryHTML}${costHTML}</div>
+                <div class="strip-actions">
+                    <button class="share-btn-strip" data-id="${breakdown.id}" title="Share Scene as Excel"><i class="fas fa-file-excel"></i></button>
+                    <button class="edit-btn-strip" data-id="${breakdown.id}" title="Edit Breakdown"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="delete-btn-strip" data-id="${breakdown.id}" title="Delete Breakdown"><i class="fas fa-trash"></i></button>
+                </div>`;
+            container.appendChild(stripWrapper);
+        });
+        container.querySelectorAll('.edit-btn-strip').forEach(b => b.onclick = () => openEditModal(parseInt(b.dataset.id)));
+        container.querySelectorAll('.delete-btn-strip').forEach(b => b.onclick = () => handleDelete(parseInt(b.dataset.id)));
+        container.querySelectorAll('.share-btn-strip').forEach(b => b.onclick = () => shareSceneAsExcel(parseInt(b.dataset.id)));
+        calculateAndRenderSequenceTotal();
+    }
+
+    function calculateAndRenderSequenceTotal() {
+        const totalDiv = document.getElementById('sequence-total-cost');
+        const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+        let totalCost = 0;
+        if (activeSequence && activeSequence.breakdowns) {
+            const filteredBreakdowns = getFilteredBreakdowns(activeSequence.breakdowns);
+            filteredBreakdowns.forEach(breakdown => {
+                CATEGORIES.forEach(cat => {
+                    if (breakdown[cat.key]) {
+                        totalCost += breakdown[cat.key].reduce((sum, item) => sum + (item.cost || 0), 0);
+                    }
+                });
+            });
+        }
+        totalDiv.innerHTML = `Total for Filtered Scenes: <span>${formatCurrency(totalCost)}</span>`;
+    }
+
+    function getFilteredBreakdowns(breakdowns) {
+        const category = document.getElementById('filter-category-select').value;
+        const value = document.getElementById('filter-value-input').value.toLowerCase();
+        if (category === 'all' || !value) return breakdowns;
+        return breakdowns.filter(b => b[category] && b[category].some(item => item.name.toLowerCase().includes(value)));
+    }
+
+    function openProjectFile(event) {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const loadedData = JSON.parse(e.target.result);
+                if (loadedData && loadedData.panelItems && loadedData.projectInfo) {
+                    projectData = loadedData;
+                    saveProjectData();
+                    alert('Project loaded successfully!');
+                    loadProjectData();
+                    showView('breakdown');
+                } else { alert('Error: Invalid project file format.'); }
+            } catch (error) { console.error(error); alert('Error: Could not read project file.'); }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    function saveProjectFile() {
+        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${(projectData.projectInfo.prodName || 'Breakdown').replace(/ /g, '_')}.filmbreakdown`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    function openProjectInfoModal() {
+        const modal = document.getElementById('project-info-modal');
+        const { prodName = '', directorName = '' } = projectData.projectInfo;
+        modal.innerHTML = `<div class="modal-content small"><span class="close-btn">&times;</span><h3>Project Information</h3><div class="modal-form"><input type="text" id="modal-prod-name" placeholder="Production Name" value="${prodName}"><input type="text" id="modal-director-name" placeholder="Director Name" value="${directorName}"><button id="modal-save-info-btn" class="btn-primary">Save Info</button></div></div>`;
+        modal.style.display = 'block';
+        modal.querySelector('.close-btn').onclick = () => modal.style.display = 'none';
+        modal.querySelector('#modal-save-info-btn').onclick = () => {
+            projectData.projectInfo.prodName = document.getElementById('modal-prod-name').value;
+            projectData.projectInfo.directorName = document.getElementById('modal-director-name').value;
+            saveProjectData();
+            modal.style.display = 'none';
+        };
+    }
+
+    function openEditModal(breakdownId) {
+        const modal = document.getElementById('edit-breakdown-modal');
+        const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+        if (!modal || !activeSequence) return;
+        const breakdown = activeSequence.breakdowns.find(b => b.id === breakdownId);
+        if (!breakdown) return;
+        modal.innerHTML = `<div class="modal-content"><span class="close-btn">&times;</span><div class="modal-body"><h3>Edit Scene #${breakdown.sceneNumber}</h3><div class="breakdown-grid" id="edit-breakdown-grid"></div></div><div class="modal-actions"><button id="save-changes-btn" class="btn-primary">Save Changes</button></div></div>`;
+        modal.style.display = 'block';
+        let tempEditData = JSON.parse(JSON.stringify(breakdown));
+        createEntryGrid('edit-breakdown-grid', tempEditData);
+        modal.querySelector('.close-btn').onclick = () => modal.style.display = 'none';
+        modal.querySelector('#save-changes-btn').onclick = () => {
+            const breakdownIndex = activeSequence.breakdowns.findIndex(b => b.id === breakdownId);
+            if (breakdownIndex > -1) {
+                activeSequence.breakdowns[breakdownIndex] = tempEditData;
+                saveProjectData(); renderBreakdownStrips(); modal.style.display = 'none';
+            }
+        };
+    }
+    
+    function handleDelete(id) {
+        if(confirm("Are you sure you want to delete this breakdown?")){
+            const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+            if(activeSequence) {
+                activeSequence.breakdowns = activeSequence.breakdowns.filter(b => b.id !== id);
+                saveProjectData(); renderBreakdownStrips();
+            }
+        }
+    }
+    
+    function handleNewSequence() {
+        let name = prompt("Enter a name for the new sequence:");
+        if (name === null) return;
+        if (name.trim() === "") name = `Sequence ${projectData.panelItems.filter(i => i.type === 'sequence').length + 1}`;
+        const newItem = { type: 'sequence', id: Date.now(), name: name, breakdowns: [] };
+        projectData.panelItems.push(newItem);
+        setActiveItem(newItem.id);
+    }
+
+    function handleAddScheduleBreak() {
+        let name = prompt("Enter a name for the schedule break (e.g., DAY 1):");
+        if (name === null || name.trim() === "") return;
+        const newItem = { type: 'schedule_break', id: Date.now(), name: name };
+        projectData.panelItems.push(newItem);
+        saveProjectData(); renderSequencePanel();
+    }
+
+    function setActiveItem(id) {
+        const item = projectData.panelItems.find(i => i.id === id);
+        if (item && item.type === 'sequence') {
+            projectData.activeItemId = id;
+            saveProjectData(); renderBreakdownStrips(); renderSequencePanel();
+        }
+    }
+    
+    function renderSequencePanel() {
+        const listContainer = document.getElementById('sequence-list');
+        listContainer.innerHTML = '';
+        projectData.panelItems.forEach(item => {
+            const element = document.createElement('div');
+            element.dataset.id = item.id;
+            if (item.type === 'sequence') {
+                element.className = `sequence-item ${item.id === projectData.activeItemId ? 'active' : ''}`;
+                element.textContent = item.name;
+                element.onclick = () => { setActiveItem(item.id); document.getElementById('sequence-panel').classList.remove('open'); };
+            } else if (item.type === 'schedule_break') {
+                element.className = 'schedule-break-item';
+                element.textContent = item.name;
+            }
+            listContainer.appendChild(element);
+        });
+    }
+
+    function populateFilterDropdown() {
+        const select = document.getElementById('filter-category-select');
+        CATEGORIES.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.key;
+            option.textContent = cat.title;
+            select.appendChild(option);
+        });
+    }
+
+    function handleFilterChange(e) {
+        const valueInput = document.getElementById('filter-value-input');
+        valueInput.style.display = e.target.value === 'all' ? 'none' : 'block';
+        valueInput.value = '';
+        renderBreakdownStrips();
+    }
+    
+    function getAggregatedData() {
+        const aggregated = {};
+        let grandTotal = 0;
+        const sceneCosts = [];
+        let currentScheduleBreak = "N/A";
+
+        projectData.panelItems.forEach(pItem => {
+            if (pItem.type === 'schedule_break') {
+                currentScheduleBreak = pItem.name;
+            } else if (pItem.type === 'sequence' && pItem.breakdowns) {
+                pItem.breakdowns.forEach(scene => {
+                    let sceneTotal = 0;
+                    CATEGORIES.forEach(cat => {
+                        if (scene[cat.key]) {
+                            scene[cat.key].forEach(item => {
+                                const cost = item.cost || 0;
+                                sceneTotal += cost;
+                                const existing = aggregated[cat.key]?.items.find(agg => agg.name.toLowerCase() === item.name.toLowerCase());
+                                if (existing) {
+                                    if(!existing.scenes.includes(scene.sceneNumber)) existing.scenes.push(scene.sceneNumber);
+                                } else {
+                                    if (!aggregated[cat.key]) aggregated[cat.key] = { title: cat.title, items: [], total: 0 };
+                                    aggregated[cat.key].items.push({ name: item.name, cost: item.cost, scenes: [scene.sceneNumber] });
+                                }
+                            });
+                        }
+                    });
+                    sceneCosts.push({
+                        number: scene.sceneNumber,
+                        location: scene.sceneLocation,
+                        sequence: pItem.name,
+                        schedule: currentScheduleBreak,
+                        cost: sceneTotal
+                    });
+                    grandTotal += sceneTotal;
+                });
+            }
+        });
+        
+        CATEGORIES.forEach(cat => {
+            if(aggregated[cat.key]) {
+                aggregated[cat.key].total = aggregated[cat.key].items.reduce((sum, item) => sum + (item.cost || 0), 0);
+            }
+        });
+
+        return { aggregated, grandTotal, sceneCosts };
+    }
+
+    function renderEstimationPage() {
+        const container = document.getElementById('estimation-table-container');
+        const grandTotalEl = document.getElementById('grand-total-cost');
+        const { grandTotal, sceneCosts } = getAggregatedData();
+        let tableHTML = '<table class="estimation-table"><thead><tr><th>Scene #</th><th>Location</th><th>Sequence</th><th>Schedule Break</th><th class="cost-cell">Total Cost</th></tr></thead><tbody>';
+        
+        sceneCosts.forEach(scene => {
+            tableHTML += `<tr>
+                <td>${scene.number}</td>
+                <td>${scene.location}</td>
+                <td>${scene.sequence}</td>
+                <td>${scene.schedule}</td>
+                <td class="cost-cell">${formatCurrency(scene.cost)}</td>
+            </tr>`;
+        });
+
+        tableHTML += '</tbody></table>';
+        container.innerHTML = tableHTML;
+        grandTotalEl.innerHTML = `Grand Total: <span>${formatCurrency(grandTotal)}</span>`;
+    }
+
+    function exportEstimateToExcel() {
+        const { grandTotal, sceneCosts } = getAggregatedData();
+        const wb = XLSX.utils.book_new();
+        const data = [];
+        data.push([`Project: ${projectData.projectInfo.prodName || 'Untitled'}`, '', `Currency: ${projectData.currency}`]);
+        data.push([`Director: ${projectData.projectInfo.directorName || 'N/A'}`]);
+        data.push([]);
+        data.push(['Scene #', 'Location', 'Sequence', 'Schedule Break', 'Total Cost']);
+        sceneCosts.forEach(scene => {
+            data.push([scene.number, scene.location, scene.sequence, scene.schedule, scene.cost]);
+        });
+        data.push([]);
+        data.push(['','','','GRAND TOTAL', grandTotal]);
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, 'Scene Cost Report');
+        XLSX.writeFile(wb, 'Scene_Cost_Report.xlsx');
+    }
+
+    function exportFilteredToExcel() {
+        const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+        if (!activeSequence) { alert("Please select a sequence to export."); return; }
+        const breakdowns = getFilteredBreakdowns(activeSequence.breakdowns);
+        if (breakdowns.length === 0) { alert("No breakdowns match the current filter."); return; }
+        saveAsExcel(false); // Use the main excel function in filtered mode
+    }
+
+    function exportEstimateToPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const { grandTotal, sceneCosts } = getAggregatedData();
+        const head = [['Scene #', 'Location', 'Sequence', 'Schedule', `Total Cost`]];
+        const body = sceneCosts.map(s => [s.number, s.location, s.sequence, s.schedule, formatCurrency(s.cost)]);
+        body.push([{ content: 'GRAND TOTAL', colSpan: 4, styles: { fontStyle: 'bold', fontSize: 14 } }, { content: formatCurrency(grandTotal), styles: { fontStyle: 'bold', fontSize: 14, halign: 'right' } }]);
+        doc.text(`Scene Cost Report: ${projectData.projectInfo.prodName || 'Untitled'}`, 14, 15);
+        doc.autoTable({ head, body, startY: 20, didParseCell: (data) => { if(data.cell.raw.toString().startsWith(getCurrencySymbol())) { data.cell.styles.halign = 'right'; } } });
+        doc.save('Scene_Cost_Report.pdf');
+    }
+    
+    async function shareSceneAsExcel(breakdownId) { 
+        const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+        const breakdown = activeSequence ? activeSequence.breakdowns.find(b => b.id === breakdownId) : null;
+        if (!breakdown) { alert("Could not find breakdown to share."); return; }
+
+        const wb = XLSX.utils.book_new();
+        const data = [];
+        let sceneTotal = 0;
+        data.push([`Project: ${projectData.projectInfo.prodName || 'Untitled'}`]);
+        data.push([`Scene: #${breakdown.sceneNumber} - ${breakdown.sceneLocation} (${breakdown.sceneTime})`]);
+        data.push([]);
+        data.push(['Category', 'Item', 'Cost']);
+        CATEGORIES.forEach(cat => {
+            if(breakdown[cat.key] && breakdown[cat.key].length > 0) {
+                breakdown[cat.key].forEach(item => {
+                    const cost = item.cost || 0;
+                    data.push([cat.title, item.name, cost]);
+                    sceneTotal += cost;
+                });
+            }
+        });
+        if(currentMode === 'producer') {
+            data.push([]);
+            data.push(['','SCENE TOTAL', sceneTotal]);
+        }
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, `Scene_${breakdown.sceneNumber}`);
+        XLSX.writeFile(wb, `Breakdown_Scene_${breakdown.sceneNumber}.xlsx`);
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: projectData.currency }).format(amount || 0);
+    }
+    
+    function getCurrencySymbol() {
+        try {
+            return (0).toLocaleString('en-US', { style:'currency', currency: projectData.currency, minimumFractionDigits:0, maximumFractionDigits:0 }).replace(/[0-9]/g,'').trim();
+        } catch (e) { return '$'; }
+    }
+    
+    // --- New Menu Item Functions ---
+    function toggleAutoSave() {
+        const statusEl = document.getElementById('auto-save-status');
+        if (autoSaveInterval) {
+            clearInterval(autoSaveInterval);
+            autoSaveInterval = null;
+            statusEl.textContent = 'OFF';
+            statusEl.className = 'auto-save-status off';
+            alert('Auto-save is now OFF.');
+        } else {
+            autoSaveInterval = setInterval(() => {
+                saveProjectData();
+                console.log('Project auto-saved.');
+            }, 120000); // 2 minutes
+            statusEl.textContent = 'ON';
+            statusEl.className = 'auto-save-status on';
+            alert('Auto-save is now ON. Project will save every 2 minutes.');
+        }
+    }
+
+    async function shareProject() {
+        const { grandTotal } = getAggregatedData();
+        const shareText = `*Project Breakdown Summary*\n` +
+            `Production: ${projectData.projectInfo.prodName || 'N/A'}\n` +
+            `Director: ${projectData.projectInfo.directorName || 'N/A'}\n` +
+            `Total Scenes: ${projectData.panelItems.reduce((acc, p) => acc + (p.breakdowns ? p.breakdowns.length : 0), 0)}\n` +
+            (currentMode === 'producer' ? `Estimated Cost: ${formatCurrency(grandTotal)}` : '');
+        
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: `Project: ${projectData.projectInfo.prodName || 'Untitled'}`, text: shareText });
+            } catch (err) { console.error("Share failed:", err); }
+        } else {
+            alert("Sharing is not supported on this browser. You can save the project file instead.");
+        }
+    }
+
+    function openInfoModal() {
+        const modal = document.getElementById('info-modal');
+        modal.innerHTML = `<div class="modal-content small">
+            <span class="close-btn" id="close-info-modal">&times;</span>
+            <h3>App Guide</h3>
+            <div class="modal-body info-content">
+                <p><strong>Assistant Mode:</strong> A clean view for tagging script elements without seeing costs.</p>
+                <p><strong>Producer Mode:</strong> Unlocks cost fields for every item, a currency selector, and the main Estimation page for budgeting.</p>
+                <p><strong>Estimate Page (Calculator Icon):</strong> Aggregates all costs into a scene-by-scene report. Visible only in Producer Mode.</p>
+                <p><strong>Side Panel (Layers Icon):</strong> Organize your project with Sequences and Schedule Breaks. You can also filter all scenes by a specific category element.</p>
+                <p><strong>Save Full Excel:</strong> Exports all sequences and their breakdowns into a single Excel file with multiple sheets.</p>
+                <p><strong>Share Scene (Excel Icon on strip):</strong> Exports a detailed breakdown of a single scene to an Excel file.</p>
+            </div>
+        </div>`;
+        modal.style.display = 'block';
+        modal.querySelector('#close-info-modal').onclick = () => modal.style.display = 'none';
+    }
+
+    function openAboutModal() {
+        const modal = document.getElementById('about-modal');
+        modal.innerHTML = `<div class="modal-content small">
+            <span class="close-btn" id="close-about-modal">&times;</span>
+            <h3 style="text-align:center;">About ToshooT</h3>
+            <p style="font-size: 1.2rem; text-align: center;">Designed by Thosho Tech</p>
+        </div>`;
+        modal.style.display = 'block';
+        modal.querySelector('#close-about-modal').onclick = () => modal.style.display = 'none';
+    }
+
+    function saveAsExcel(isFullProject = true) {
+        if (!isFullProject) {
+            exportFilteredToExcel(); // Side panel export
+            return;
+        }
+        // Full project export
+        const wb = XLSX.utils.book_new();
+        let grandTotal = 0;
+        projectData.panelItems.forEach(pItem => {
+            if (pItem.type === 'sequence' && pItem.breakdowns && pItem.breakdowns.length > 0) {
+                const data = [];
+                let sequenceTotal = 0;
+                const headers = ['Scene #', 'Location', ...CATEGORIES.map(c => c.title)];
+                if(currentMode === 'producer') headers.push('Scene Total');
+                data.push(headers);
+                
+                pItem.breakdowns.forEach(b => {
+                    let sceneTotal = 0;
+                    const row = [b.sceneNumber, b.sceneLocation];
+                    CATEGORIES.forEach(cat => {
+                        const items = b[cat.key] ? b[cat.key].map(i => {
+                            if(currentMode === 'producer') sceneTotal += (i.cost || 0);
+                            return i.name;
+                        }).join('; ') : '';
+                        row.push(items);
+                    });
+                    if(currentMode === 'producer') row.push(sceneTotal);
+                    data.push(row);
+                    sequenceTotal += sceneTotal;
+                });
+
+                if(currentMode === 'producer') {
+                    data.push([]);
+                    const totalRow = new Array(headers.length).fill('');
+                    totalRow[headers.length-2] = "SEQUENCE TOTAL";
+                    totalRow[headers.length-1] = sequenceTotal;
+                    data.push(totalRow);
+                    grandTotal += sequenceTotal;
+                }
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                ws['!cols'] = headers.map(h => ({wch: h.length < 15 ? 15 : h.length + 2}));
+                XLSX.utils.book_append_sheet(wb, ws, pItem.name.replace(/[/\\?*:[\]]/g, ''));
+            }
+        });
+
+        if (currentMode === 'producer') {
+            const summaryData = [['GRAND TOTAL', grandTotal]];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Total");
+        }
+        
+        if (wb.SheetNames.length === 0) {
+            alert("No breakdowns to export.");
+            return;
+        }
+
+        XLSX.writeFile(wb, `${(projectData.projectInfo.prodName || 'Full_Project_Breakdown')}.xlsx`);
+    }
+
+    initialize();
+});
+
