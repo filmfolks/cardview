@@ -130,6 +130,25 @@ function handleAddScheduleBreak() {
     renderSequencePanel();
 }
 
+/**
+ * NEW: Handles renaming a sequence or schedule break.
+ * @param {number} id The ID of the item to edit.
+ */
+function handleEditItem(id) {
+    const item = projectData.panelItems.find(i => i.id === id);
+    if (!item) return;
+
+    const newName = prompt("Enter the new name:", item.name);
+
+    if (newName !== null && newName.trim() !== "") {
+        item.name = newName.trim();
+        saveProjectData();
+        renderSequencePanel(); // Redraw the panel with the new name
+        renderSchedule();    // Redraw the main view in case the active sequence name changed
+    }
+}
+
+
 function setActiveItem(id) {
     const item = projectData.panelItems.find(i => i.id === id);
     if (item && item.type === 'sequence') {
@@ -141,22 +160,43 @@ function setActiveItem(id) {
     }
 }
 
+/**
+ * MODIFIED: Now creates an edit button for each item.
+ */
 function renderSequencePanel() {
     const listContainer = document.getElementById('sequence-list');
     listContainer.innerHTML = '';
     projectData.panelItems.forEach(item => {
         const element = document.createElement('div');
+
+        // Create span for the name
+        const itemName = document.createElement('span');
+        itemName.className = 'panel-item-name';
+        itemName.textContent = item.name;
+
+        // Create the edit button
+        const editBtn = document.createElement('button');
+        editBtn.className = 'edit-item-btn';
+        editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+        editBtn.title = 'Edit Name';
+        editBtn.onclick = (e) => {
+            e.stopPropagation(); // Prevent container's click event (setActiveItem)
+            handleEditItem(item.id);
+        };
+
         if (item.type === 'sequence') {
             element.className = `sequence-item ${item.id === projectData.activeItemId ? 'active' : ''}`;
-            element.textContent = item.name;
             element.onclick = () => setActiveItem(item.id);
         } else if (item.type === 'schedule_break') {
             element.className = 'schedule-break-item';
-            element.textContent = item.name;
         }
+
+        element.appendChild(itemName);
+        element.appendChild(editBtn);
         listContainer.appendChild(element);
     });
 }
+
 
 // =================================================================
 // --- FILTERING LOGIC ---
