@@ -1,19 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- CATEGORY DEFINITIONS ---
-    // Define all categories with their titles, icons, and accent colors.
     const categories = [
         { key: 'cast', title: 'Cast', icon: 'fa-user-ninja', color: 'var(--color-cast)' },
         { key: 'props', title: 'Props', icon: 'fa-magic-wand-sparkles', color: 'var(--color-props)' },
-        { key: 'costumes', title: 'Costumes & Wardrobe', icon: 'fa-tshirt', color: 'var(--color-costumes)' },
-        { key: 'makeup', title: 'Hair & Makeup', icon: 'fa-air-freshener', color: 'var(--color-makeup)' },
+        { key: 'costumes', title: 'Costumes & Wardrobe', icon: 'fa-shirt', color: 'var(--color-costumes)' },
+        { key: 'makeup', title: 'Hair & Makeup', icon: 'fa-palette', color: 'var(--color-makeup)' },
         { key: 'vehicles', title: 'Vehicles', icon: 'fa-car', color: 'var(--color-vehicles)' },
         { key: 'sfx', title: 'Special Effects (SFX)', icon: 'fa-bomb', color: 'var(--color-sfx)' },
         { key: 'sound', title: 'Sound', icon: 'fa-volume-high', color: 'var(--color-sound)' },
-        { key: 'stunts', title: 'Stunts', icon: 'fa-person-falling-burst', color: 'var(--color-stunts)' },
+        { key: 'stunts', title: 'Stunts', icon: 'fa-bolt', color: 'var(--color-stunts)' },
     ];
 
     // --- GLOBAL STATE ---
-    // This object will hold all the data for the current breakdown.
     let breakdownData = {};
 
     // --- DOM ELEMENTS ---
@@ -22,11 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     function initialize() {
-        // Create the UI for each category
-        categories.forEach(cat => createCategoryUI(cat));
+        if (!breakdownGrid || !saveSceneDetailsBtn) {
+            console.error("Critical HTML elements are missing. Aborting initialization.");
+            return;
+        }
+        
         // Load any saved data from the browser
         loadBreakdownData();
-        // Render the loaded data
+        // Create the UI for each category
+        categories.forEach(createCategoryUI);
+        // Render the loaded data onto the newly created UI
         renderAll();
 
         // Attach event listener to the "Save Scene Details" button
@@ -42,14 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         categoryDiv.innerHTML = `
             <h4><i class="fas ${category.icon}"></i> ${category.title}</h4>
-            <div class="add-item-form">
-                <input type="text" placeholder="Add element...">
+            <form class="add-item-form">
+                <input type="text" placeholder="Add element..." required>
                 <button type="submit">Add</button>
-            </div>
+            </form>
             <ul class="item-list"></ul>
         `;
 
-        // Add event listener to the form inside the category
         categoryDiv.querySelector('.add-item-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const input = e.target.querySelector('input');
@@ -74,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function deleteItem(categoryKey, index) {
-        if (breakdownData[categoryKey] && breakdownData[categoryKey][index]) {
+        if (breakdownData[categoryKey] && breakdownData[categoryKey][index] !== undefined) {
             breakdownData[categoryKey].splice(index, 1);
             saveBreakdownData();
             renderCategory(categoryKey);
@@ -118,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('scene-time').value = breakdownData.sceneTime || 'DAY';
         document.getElementById('scene-description').value = breakdownData.sceneDescription || '';
 
-        // Render each category
+        // Render each category's list of items
         categories.forEach(cat => renderCategory(cat.key));
     }
 
@@ -132,8 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedData) {
             breakdownData = JSON.parse(savedData);
         } else {
-            // Initialize with empty data structure if nothing is saved
-            breakdownData = { sceneNumber: '', sceneDescription: '' };
+            // Initialize with an empty data structure if nothing is saved
+            breakdownData = {};
+            categories.forEach(cat => {
+                breakdownData[cat.key] = [];
+            });
         }
     }
 
