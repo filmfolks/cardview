@@ -69,13 +69,17 @@ button { padding: 10px 20px; border-radius: 6px; font-size: 1rem; font-weight: 6
 .auto-save-status.off { background-color: var(--danger-color); color: white; }
 .auto-save-status.on { background-color: var(--success-color); color: white; }
 
-/* --- Scene Strip Styles --- */
-.scene-strips-container { display: flex; flex-direction: column; gap: 8px; }
-.scene-strip-wrapper { display: flex; align-items: center; gap: 10px; }
-.scene-strip {
-    flex-grow: 1; background-color: var(--background-color); border: 1px solid var(--border-color);
-    border-radius: 6px; padding: 12px 15px; display: flex; align-items: center;
-    gap: 15px; overflow-x: auto; white-space: nowrap;
+/* --- REPLACE this entire rule in your style.css --- */
+.scene-strips-container {
+    /* The new, crucial properties for virtual scrolling: */
+    height: 60vh; /* Sets a fixed height. Use vh (viewport height) to make it responsive. */
+    overflow-y: auto; /* This makes the container itself scrollable. */
+    position: relative; /* Essential for positioning the items inside. */
+
+    /* These are your original properties: */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 .strip-item { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: #d1d5db; padding-right: 15px; border-right: 1px solid var(--border-color); }
 .strip-item:last-of-type { border-right: none; padding-right: 0; }
