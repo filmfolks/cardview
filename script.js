@@ -10,6 +10,9 @@ let lastContactPerson = '';
 let activeFilter = { type: 'all', value: '' };
 let autoSaveInterval = null;
 
+let currentPage = 1;
+const scenesPerPage = 10;
+
 // =================================================================
 // --- INITIALIZATION ---
 // =================================================================
@@ -74,7 +77,10 @@ function setupEventListeners() {
     safeAddListener('close-panel-btn', 'click', () => sequencePanel.classList.remove('open'));
     safeAddListener('add-schedule-break-btn', 'click', handleAddScheduleBreak);
     safeAddListener('export-panel-btn', 'click', () => saveAsExcel(false));
-    safeAddListener('filter-by-select', 'change', handleFilterChange);
+    safeAddListener('filter-by-select', 'change', (e) => {
+        currentPage = 1;
+        handleFilterChange(e);
+    });
 
     safeAddListener('close-project-modal', 'click', closeProjectModal);
     safeAddListener('save-project-info-btn', 'click', handleSaveProjectInfo);
@@ -130,10 +136,6 @@ function handleAddScheduleBreak() {
     renderSequencePanel();
 }
 
-/**
- * NEW: Handles renaming a sequence or schedule break.
- * @param {number} id The ID of the item to edit.
- */
 function handleEditItem(id) {
     const item = projectData.panelItems.find(i => i.id === id);
     if (!item) return;
@@ -143,8 +145,8 @@ function handleEditItem(id) {
     if (newName !== null && newName.trim() !== "") {
         item.name = newName.trim();
         saveProjectData();
-        renderSequencePanel(); // Redraw the panel with the new name
-        renderSchedule();    // Redraw the main view in case the active sequence name changed
+        renderSequencePanel(); 
+        renderSchedule();    
     }
 }
 
@@ -153,6 +155,7 @@ function setActiveItem(id) {
     const item = projectData.panelItems.find(i => i.id === id);
     if (item && item.type === 'sequence') {
         projectData.activeItemId = id;
+        currentPage = 1; 
         saveProjectData();
         renderSchedule();
         renderSequencePanel();
@@ -160,27 +163,21 @@ function setActiveItem(id) {
     }
 }
 
-/**
- * MODIFIED: Now creates an edit button for each item.
- */
 function renderSequencePanel() {
     const listContainer = document.getElementById('sequence-list');
     listContainer.innerHTML = '';
     projectData.panelItems.forEach(item => {
         const element = document.createElement('div');
-
-        // Create span for the name
         const itemName = document.createElement('span');
         itemName.className = 'panel-item-name';
         itemName.textContent = item.name;
 
-        // Create the edit button
         const editBtn = document.createElement('button');
         editBtn.className = 'edit-item-btn';
         editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
         editBtn.title = 'Edit Name';
         editBtn.onclick = (e) => {
-            e.stopPropagation(); // Prevent container's click event (setActiveItem)
+            e.stopPropagation(); 
             handleEditItem(item.id);
         };
 
@@ -217,28 +214,33 @@ function renderFilterControls() {
     }
 
     let inputElement;
-    if (filterType === 'date') {
-        inputElement = document.createElement('input');
-        inputElement.type = 'date';
-        inputElement.className = 'panel-sort';
-    } else if (filterType === 'status') {
-        inputElement = document.createElement('select');
-        inputElement.className = 'panel-sort';
-        inputElement.innerHTML = `
-            <option value="">Select Status</option>
-            <option value="Pending">Pending</option>
-            <option value="NOT SHOT">NOT SHOT</option>
-            <option value="Done">Done</option>
-        `;
-    } else if (filterType === 'cast') {
-        inputElement = document.createElement('input');
-        inputElement.type = 'text';
-        inputElement.placeholder = 'Enter Cast Name';
+    // CHANGED: Added new filter types
+    if (['date', 'status', 'cast', 'shootLocation', 'sceneSetting', 'dayNight'].includes(filterType)) {
+        if (filterType === 'date') {
+            inputElement = document.createElement('input');
+            inputElement.type = 'date';
+        } else if (filterType === 'status') {
+            inputElement = document.createElement('select');
+            inputElement.innerHTML = `<option value="">Select Status</option><option value="Pending">Pending</option><option value="NOT SHOT">NOT SHOT</option><option value="Done">Done</option>`;
+        } else if (filterType === 'dayNight') {
+            inputElement = document.createElement('select');
+            inputElement.innerHTML = `<option value="">Select Time</option><option value="DAY">DAY</option><option value="NIGHT">NIGHT</option>`;
+        } else {
+            inputElement = document.createElement('input');
+            inputElement.type = 'text';
+            const placeholders = {
+                cast: 'Enter Cast Name',
+                shootLocation: 'Enter Shoot Location',
+                sceneSetting: 'Enter Scene Setting'
+            };
+            inputElement.placeholder = placeholders[filterType];
+        }
         inputElement.className = 'panel-sort';
     }
 
     if (inputElement) {
         const updateFilter = (e) => {
+            currentPage = 1;
             activeFilter = { type: filterType, value: e.target.value.trim().toLowerCase() };
             renderSchedule();
         };
@@ -261,15 +263,19 @@ function getVisibleScenes() {
     if (activeFilter.type === 'all' || !activeFilter.value) { return allScenes; }
 
     return allScenes.filter(scene => {
-        if (!scene.hasOwnProperty(activeFilter.type)) return false;
-        const sceneValue = (scene[activeFilter.type] || '').toString().toLowerCase();
+        const sceneProperty = scene[activeFilter.type];
+        if (sceneProperty === undefined || sceneProperty === null) return false;
+        
+        const sceneValue = sceneProperty.toString().toLowerCase();
         const filterValue = activeFilter.value.toLowerCase();
         return sceneValue.includes(filterValue);
     });
 }
 
+
 function resetFilter() {
     activeFilter = { type: 'all', value: '' };
+    currentPage = 1;
     const filterSelect = document.getElementById('filter-by-select');
     if (filterSelect) filterSelect.value = 'all';
     renderFilterControls();
@@ -288,14 +294,24 @@ function handleAddScene(e) {
             if(!activeSequence) return;
         } else { return; }
     }
+    // CHANGED: Scene object now includes all new and renamed fields
     const newScene = {
-        id: Date.now(), number: document.getElementById('scene-number').value,
-        heading: document.getElementById('scene-heading').value, date: document.getElementById('scene-date').value,
-        time: document.getElementById('scene-time').value, type: document.getElementById('scene-type').value,
-        location: document.getElementById('scene-location').value, pages: document.getElementById('scene-pages').value,
-        duration: document.getElementById('scene-duration').value, status: document.getElementById('scene-status').value,
-        cast: document.getElementById('scene-cast').value, equipment: document.getElementById('scene-equipment').value,
+        id: Date.now(),
+        description: document.getElementById('scene-description').value,
+        number: document.getElementById('scene-number').value,
+        sceneSetting: document.getElementById('scene-setting').value,
+        dayNight: document.getElementById('day-night').value,
+        date: document.getElementById('scene-date').value,
+        time: document.getElementById('scene-time').value,
+        type: document.getElementById('scene-type').value,
+        shootLocation: document.getElementById('shoot-location').value,
+        pages: document.getElementById('scene-pages').value,
+        duration: document.getElementById('scene-duration').value,
+        status: document.getElementById('scene-status').value,
+        cast: document.getElementById('scene-cast').value,
+        equipment: document.getElementById('scene-equipment').value,
         contact: document.getElementById('scene-contact').value,
+        notes: document.getElementById('scene-notes').value,
     };
     activeSequence.scenes.push(newScene);
     lastContactPerson = newScene.contact;
@@ -310,29 +326,42 @@ function renderSchedule() {
     const container = document.getElementById('scene-strips-container');
     const display = document.getElementById('active-sequence-display');
     container.innerHTML = '';
+    
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence || activeSequence.type !== 'sequence') {
         display.textContent = 'No active sequence. Create or select a sequence.';
+        renderPaginationControls(0, 0); 
         return;
     }
+    
     display.textContent = `Current Sequence: ${activeSequence.name}`;
-    const scenesToRender = getVisibleScenes();
-    if (scenesToRender.length === 0 && activeFilter.type !== 'all') {
-        container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes match the current filter.</p>`;
+    const allMatchingScenes = getVisibleScenes();
+    
+    const startIndex = (currentPage - 1) * scenesPerPage;
+    const endIndex = startIndex + scenesPerPage;
+    const paginatedScenes = allMatchingScenes.slice(startIndex, endIndex);
+
+    if (allMatchingScenes.length === 0) {
+        if (activeFilter.type !== 'all') {
+            container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes match the current filter.</p>`;
+        } else {
+             container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes yet. Add one below!</p>`;
+        }
     } else {
-        scenesToRender.forEach(scene => {
+        paginatedScenes.forEach(scene => {
             const stripWrapper = document.createElement('div');
             stripWrapper.className = 'scene-strip-wrapper';
             const statusClass = scene.status.replace(/\s+/g, '-').toLowerCase();
+            // CHANGED: Scene strip updated with new fields
             stripWrapper.innerHTML = `
                 <div class="scene-strip" id="scene-strip-${scene.id}">
-                    <div class="strip-item"><strong>#${scene.number}</strong></div><div class="strip-item">${scene.heading}</div>
+                    <div class="strip-item"><strong>#${scene.number}</strong></div>
+                    <div class="strip-item">${scene.type} ${scene.sceneSetting} - ${scene.dayNight}</div>
+                    <div class="strip-item">${scene.description.substring(0, 50)}...</div>
                     <div class="strip-item">${formatDateDDMMYYYY(scene.date)}</div><div class="strip-item">${formatTime12Hour(scene.time)}</div>
-                    <div class="strip-item">${scene.type}. ${scene.location}</div>
+                    <div class="strip-item">Location: <strong>${scene.shootLocation}</strong></div>
                     <div class="strip-item">Pages: <strong>${scene.pages || 'N/A'}</strong></div>
-                    <div class="strip-item">Duration: <strong>${scene.duration || 'N/A'}</strong></div>
                     <div class="strip-item">Cast: <strong>${scene.cast || 'N/A'}</strong></div>
-                    <div class="strip-item">Equipment: <strong>${scene.equipment || 'N/A'}</strong></div>
                     <div class="strip-item"><span class="strip-status ${statusClass}">${scene.status}</span></div>
                 </div>
                 <div class="scene-actions">
@@ -345,7 +374,49 @@ function renderSchedule() {
             container.appendChild(stripWrapper);
         });
     }
+    
+    renderPaginationControls(allMatchingScenes.length, scenesPerPage);
 }
+
+function renderPaginationControls(totalItems, itemsPerPage) {
+    const container = document.getElementById('pagination-controls');
+    container.innerHTML = '';
+
+    if (totalItems <= itemsPerPage) return;
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    const prevButton = document.createElement('button');
+    prevButton.textContent = 'Previous';
+    prevButton.className = 'btn-primary';
+    prevButton.disabled = currentPage === 1;
+    prevButton.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderSchedule();
+        }
+    });
+
+    const pageInfo = document.createElement('span');
+    pageInfo.className = 'page-info';
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+    const nextButton = document.createElement('button');
+    nextButton.textContent = 'Next';
+    nextButton.className = 'btn-primary';
+    nextButton.disabled = currentPage === totalPages;
+    nextButton.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderSchedule();
+        }
+    });
+
+    container.appendChild(prevButton);
+    container.appendChild(pageInfo);
+    container.appendChild(nextButton);
+}
+
 
 function deleteScene(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
@@ -472,6 +543,7 @@ function handleSaveProjectInfo() {
     saveProjectData();
     closeProjectModal();
 }
+// CHANGED: Edit modal now populates all new fields
 function openEditModal(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence) return;
@@ -479,20 +551,24 @@ function openEditModal(id) {
     if (!scene) return;
     document.getElementById('edit-scene-id').value = scene.id;
     document.getElementById('edit-scene-number').value = scene.number;
-    document.getElementById('edit-scene-heading').value = scene.heading;
+    document.getElementById('edit-scene-description').value = scene.description;
+    document.getElementById('edit-scene-setting').value = scene.sceneSetting;
+    document.getElementById('edit-day-night').value = scene.dayNight;
     document.getElementById('edit-scene-date').value = scene.date;
     document.getElementById('edit-scene-time').value = scene.time;
     document.getElementById('edit-scene-type').value = scene.type;
-    document.getElementById('edit-scene-location').value = scene.location;
+    document.getElementById('edit-shoot-location').value = scene.shootLocation;
     document.getElementById('edit-scene-pages').value = scene.pages;
     document.getElementById('edit-scene-duration').value = scene.duration;
     document.getElementById('edit-scene-status').value = scene.status;
     document.getElementById('edit-scene-cast').value = scene.cast;
     document.getElementById('edit-scene-equipment').value = scene.equipment;
     document.getElementById('edit-scene-contact').value = scene.contact;
+    document.getElementById('edit-scene-notes').value = scene.notes;
     document.getElementById('edit-scene-modal').style.display = 'block';
 }
 function closeEditModal() { document.getElementById('edit-scene-modal').style.display = 'none'; }
+// CHANGED: Save changes now saves all new fields
 function handleSaveChanges() {
     const sceneId = parseInt(document.getElementById('edit-scene-id').value);
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
@@ -500,13 +576,22 @@ function handleSaveChanges() {
     const sceneIndex = activeSequence.scenes.findIndex(s => s.id === sceneId);
     if (sceneIndex === -1) return;
     activeSequence.scenes[sceneIndex] = {
-        id: sceneId, number: document.getElementById('edit-scene-number').value,
-        heading: document.getElementById('edit-scene-heading').value, date: document.getElementById('edit-scene-date').value,
-        time: document.getElementById('edit-scene-time').value, type: document.getElementById('edit-scene-type').value,
-        location: document.getElementById('edit-scene-location').value, pages: document.getElementById('edit-scene-pages').value,
-        duration: document.getElementById('edit-scene-duration').value, status: document.getElementById('edit-scene-status').value,
-        cast: document.getElementById('edit-scene-cast').value, equipment: document.getElementById('edit-scene-equipment').value,
-        contact: document.getElementById('edit-scene-contact').value
+        id: sceneId,
+        number: document.getElementById('edit-scene-number').value,
+        description: document.getElementById('edit-scene-description').value,
+        sceneSetting: document.getElementById('edit-scene-setting').value,
+        dayNight: document.getElementById('edit-day-night').value,
+        date: document.getElementById('edit-scene-date').value,
+        time: document.getElementById('edit-scene-time').value,
+        type: document.getElementById('edit-scene-type').value,
+        shootLocation: document.getElementById('edit-shoot-location').value,
+        pages: document.getElementById('edit-scene-pages').value,
+        duration: document.getElementById('edit-scene-duration').value,
+        status: document.getElementById('edit-scene-status').value,
+        cast: document.getElementById('edit-scene-cast').value,
+        equipment: document.getElementById('edit-scene-equipment').value,
+        contact: document.getElementById('edit-scene-contact').value,
+        notes: document.getElementById('edit-scene-notes').value
     };
     saveProjectData();
     renderSchedule();
@@ -527,9 +612,7 @@ function saveAsExcel(isFullProject = false) {
     const projectInfo = projectData.projectInfo || {};
     const workbook = XLSX.utils.book_new();
 
-    // This helper function creates a single, nicely formatted sheet.
     const createSheet = (scenes, sheetName) => {
-        // Find the schedule break (e.g., DAY 1) associated with this sequence
         let scheduleBreakName = 'Uncategorized';
         const sequenceIndex = projectData.panelItems.findIndex(item => item.name === sheetName && item.type === 'sequence');
         if (sequenceIndex > -1) {
@@ -541,7 +624,6 @@ function saveAsExcel(isFullProject = false) {
             }
         }
 
-        // Define all headers
         const projectHeader = [
             ["Production:", projectInfo.prodName || 'N/A', null, "Director:", projectInfo.directorName || 'N/A'],
             ["Contact:", projectInfo.contactNumber || 'N/A', null, "Email:", projectInfo.contactEmail || 'N/A'],
@@ -550,18 +632,17 @@ function saveAsExcel(isFullProject = false) {
             [`Sequence: ${sheetName}`],
             []
         ];
-        const tableHeader = ['Scene #', 'Scene Heading', 'Date', 'Time', 'Type', 'Location', 'Pages', 'Duration', 'Status', 'Cast', 'Key Equipment', 'Contact'];
+        // CHANGED: Excel headers updated
+        const tableHeader = ['Scene #', 'Scene Description', 'Scene Setting', 'Day/Night', 'Date', 'Time', 'Type', 'Shoot Location', 'Pages', 'Duration', 'Status', 'Cast', 'Key Equipment', 'Contact', 'Notes'];
         
-        // Format scene data into an array of arrays
+        // CHANGED: Excel body mapping updated
         const tableBody = scenes.map(s => [
-            s.number, s.heading, formatDateDDMMYYYY(s.date), s.time, s.type, s.location, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact
+            s.number, s.description, s.sceneSetting, s.dayNight, formatDateDDMMYYYY(s.date), s.time, s.type, s.shootLocation, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact, s.notes
         ]);
 
-        // Combine all data for the sheet
         const fullSheetData = projectHeader.concat([tableHeader]).concat(tableBody);
         const worksheet = XLSX.utils.aoa_to_sheet(fullSheetData);
 
-        // Add cell merges for a professional look
         const numCols = tableHeader.length - 1;
         worksheet['!merges'] = [
             { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } }, { s: { r: 0, c: 4 }, e: { r: 0, c: numCols } },
@@ -569,7 +650,6 @@ function saveAsExcel(isFullProject = false) {
             { s: { r: 3, c: 0 }, e: { r: 3, c: numCols } }, { s: { r: 4, c: 0 }, e: { r: 4, c: numCols } }
         ];
         
-        // Set column widths for readability
         if (scenes.length > 0) {
              const colWidths = tableHeader.map((_, i) => {
                 const allValues = [tableHeader[i] || ''].concat(tableBody.map(row => (row[i] || '').toString()));
@@ -582,41 +662,25 @@ function saveAsExcel(isFullProject = false) {
         return worksheet;
     };
 
-    // LOGIC FOR "Save Full Project Excel"
     if (isFullProject) {
-        console.log("Starting full project export...");
-
-        // This loop goes through every item you have in the Sort Panel.
+        let exportedCount = 0;
         projectData.panelItems.forEach(item => {
-            // It checks if the item is a sequence and if it actually contains scenes.
-            // Sequences without scenes will be skipped.
             if (item.type === 'sequence' && item.scenes && item.scenes.length > 0) {
-                console.log(`Found sequence with scenes: "${item.name}". Creating sheet...`);
-                
-                // A new sheet is created for this sequence.
                 const worksheet = createSheet(item.scenes, item.name);
-                
-                // The new sheet is appended to the Excel workbook. This does NOT overwrite previous sheets.
                 const safeSheetName = item.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31);
                 XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
+                exportedCount++;
             }
         });
         
-        // After checking all sequences, we check if any sheets were created.
-        if(workbook.SheetNames.length === 0){ 
+        if(exportedCount === 0){ 
             alert("Export failed: No sequences with scenes were found in your project."); 
             return;
         }
         
-        console.log(`Exporting workbook with ${workbook.SheetNames.length} sheets: ${workbook.SheetNames.join(', ')}`);
-
-        // The workbook, now containing all the sheets, is saved to a single file.
         XLSX.writeFile(workbook, `${(projectInfo.prodName || 'FullProject').replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
-        
-        // This new confirmation alert gives you clear feedback.
-        alert(`Successfully exported ${workbook.SheetNames.length} sequence(s) into a single Excel file.\n\nPlease check the tabs at the bottom of the Excel window to see all the sheets.`);
+        alert(`Successfully exported ${workbook.SheetNames.length} sequence(s) into a single Excel file.`);
 
-    // LOGIC FOR "Export Visible Scenes" from the Sort Panel (this logic remains unchanged)
     } else {
         const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
         if (!activeSequence) { alert("Please select a sequence to export."); return; }
@@ -650,26 +714,32 @@ async function shareProject() {
     }
 }
 
+// CHANGED: Share card logic is completely updated
 async function shareScene(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence) return;
     const scene = activeSequence.scenes.find(s => s.id === id);
     if (!scene) return;
     const projectInfo = projectData.projectInfo || {};
+    
+    // Conditional Notes HTML
+    const notesHTML = scene.notes ? `<div class="share-card-item"><strong>Notes:</strong> ${scene.notes}</div>` : '';
 
     const template = document.getElementById('share-card-template');
     template.innerHTML = `
         <div class="share-card-content">
             <div class="share-card-header">
                 <h1>Scene ${scene.number || 'N/A'}</h1>
-                <h2>${scene.heading || 'N/A'}</h2>
             </div>
-             <div class="share-card-item"><strong>Pages:</strong> ${scene.pages || 'N/A'}</div>
-            <div class="share-card-item"><strong>Location:</strong> ${scene.type}. ${scene.location}</div>
+            <div class="share-card-item"><strong>Scene Setting:</strong> ${scene.type} ${scene.sceneSetting} - ${scene.dayNight}</div>
+            <div class="share-card-item description"><strong>Description:</strong> ${scene.description || 'N/A'}</div>
+            <div class="share-card-item"><strong>Pages:</strong> ${scene.pages || 'N/A'}</div>
             <div class="share-card-item"><strong>Cast:</strong> ${scene.cast || 'N/A'}</div>
-             <div class="share-card-item"><strong>Date:</strong> ${formatDateDDMMYYYY(scene.date)}</div>
+            <div class="share-card-item"><strong>Date:</strong> ${formatDateDDMMYYYY(scene.date)}</div>
             <div class="share-card-item"><strong>Time:</strong> ${formatTime12Hour(scene.time)}</div>
+            <div class="share-card-item"><strong>Shoot Location:</strong> ${scene.shootLocation || 'N/A'}</div>
             <div class="share-card-item"><strong>Contact:</strong> ${scene.contact || 'N/A'}</div>
+            ${notesHTML}
             <div class="share-card-footer">
                 <div class="footer-project-info">
                     <div><strong>${projectInfo.prodName || 'Production'}</strong></div>
@@ -688,7 +758,7 @@ async function shareScene(id) {
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     title: `Shooting Info: Scene ${scene.number}`,
-                    text: `Details for Scene ${scene.number} - ${scene.heading}`,
+                    text: `Details for Scene ${scene.number}`,
                     files: [file]
                 });
             } else {
