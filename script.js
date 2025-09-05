@@ -145,12 +145,11 @@ function handleEditItem(id) {
     }
 }
 
-// MODIFIED: Clicking a sequence now clears any active global filter.
 function setActiveItem(id) {
     const item = projectData.panelItems.find(i => i.id === id);
     if (item && item.type === 'sequence') {
         projectData.activeItemId = id;
-        resetFilter(); // This clears the global filter and triggers a re-render
+        resetFilter(); 
         saveProjectData();
         renderSequencePanel();
         document.getElementById('sequence-panel').classList.remove('open');
@@ -197,7 +196,7 @@ function renderSequencePanel() {
 function handleFilterChange(e) {
     const filterType = document.getElementById('filter-by-select').value;
     const filterControls = document.getElementById('filter-controls');
-    filterControls.innerHTML = ''; // Clear previous controls
+    filterControls.innerHTML = ''; 
     
     if (filterType === 'all') {
         activeFilter = { type: 'all', value: '' };
@@ -242,11 +241,10 @@ function handleFilterChange(e) {
         filterControls.appendChild(inputElement);
     }
     
-    activeFilter = { type: filterType, value: '' }; // Set type but wait for value
-    renderSchedule(); // Initial render for the new filter type
+    activeFilter = { type: filterType, value: '' }; 
+    renderSchedule(); 
 }
 
-// NEW: This function searches the entire project for scenes matching the active filter.
 function getGloballyFilteredResults() {
     const results = [];
     const orderedPanelItems = getOrderedPanelItems();
@@ -315,12 +313,11 @@ function handleAddScene(e) {
     activeSequence.scenes.push(newScene);
     lastContactPerson = newScene.contact;
     saveProjectData();
-    renderSchedule(); // Re-render the active sequence
+    renderSchedule();
     e.target.reset();
     document.getElementById('scene-contact').value = lastContactPerson;
 }
 
-// REWRITTEN: This function now handles both single-sequence view and global filter view.
 function renderSchedule() {
     const container = document.getElementById('scene-strips-container');
     const display = document.getElementById('active-sequence-display');
@@ -331,7 +328,6 @@ function renderSchedule() {
     const isGlobalFilterActive = activeFilter.type !== 'all' && activeFilter.value !== '';
 
     if (isGlobalFilterActive) {
-        // --- GLOBAL FILTER VIEW ---
         const filterName = document.querySelector(`#filter-by-select option[value="${activeFilter.type}"]`).textContent;
         display.textContent = `Filtered Results for: "${activeFilter.value}" in ${filterName}`;
         
@@ -342,11 +338,15 @@ function renderSchedule() {
             return;
         }
 
+        let lastBreak = null;
         results.forEach(result => {
-            const breakHeader = document.createElement('div');
-            breakHeader.className = 'schedule-break-header';
-            breakHeader.textContent = result.scheduleBreak;
-            container.appendChild(breakHeader);
+            if (result.scheduleBreak !== lastBreak) {
+                const breakHeader = document.createElement('div');
+                breakHeader.className = 'schedule-break-header';
+                breakHeader.textContent = result.scheduleBreak;
+                container.appendChild(breakHeader);
+                lastBreak = result.scheduleBreak;
+            }
 
             const seqHeader = document.createElement('div');
             seqHeader.className = 'sequence-header';
@@ -357,7 +357,6 @@ function renderSchedule() {
         });
 
     } else {
-        // --- SINGLE SEQUENCE VIEW (Original Logic) ---
         const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
         if (!activeSequence || activeSequence.type !== 'sequence') {
             display.textContent = 'No active sequence. Create or select a sequence.';
@@ -380,7 +379,6 @@ function renderSchedule() {
     }
 }
 
-// NEW: Helper function to render a single scene strip to avoid code duplication.
 function renderSceneStrip(scene, container) {
     const stripWrapper = document.createElement('div');
     stripWrapper.className = 'scene-strip-wrapper';
@@ -651,79 +649,42 @@ function handleDeleteFromModal() {
 // =================================================================
 // --- EXPORT & SHARE FUNCTIONS ---
 // =================================================================
-// NEW HELPER FUNCTION: Reads the current visual order from the DOM
 function getOrderedPanelItems() {
     const listContainer = document.getElementById('sequence-list');
-    if (!listContainer) return projectData.panelItems; // Fallback
+    if (!listContainer) return projectData.panelItems;
     const itemElements = Array.from(listContainer.children);
     const orderedIds = itemElements.map(el => parseInt(el.dataset.id));
-    
     const idMap = new Map(projectData.panelItems.map(item => [item.id, item]));
     const orderedItems = orderedIds.map(id => idMap.get(id)).filter(Boolean);
-    
     return orderedItems;
 }
 
 
-// REWRITTEN & FIXED: This function now correctly exports the full project and provides feedback.
 function saveAsExcel(isFullProject = false) {
     const projectInfo = projectData.projectInfo || {};
     const workbook = XLSX.utils.book_new();
-    const orderedPanelItems = getOrderedPanelItems(); // Get the correct visual order
+    const orderedPanelItems = getOrderedPanelItems();
 
-    // This helper function remains the same, it's used by the main logic below.
-    const createSheet = (sequence, scenesToPrint) => {
-        let scheduleBreakName = 'Uncategorized';
-        const sequenceIndex = orderedPanelItems.findIndex(item => item.id === sequence.id);
-        
-        if (sequenceIndex > -1) {
-            for (let i = sequenceIndex - 1; i >= 0; i--) {
-                if (orderedPanelItems[i].type === 'schedule_break') {
-                    scheduleBreakName = orderedPanelItems[i].name;
-                    break;
-                }
-            }
-        }
-        const projectHeader = [
-            ["Production:", projectInfo.prodName || 'N/A', null, "Director:", projectInfo.directorName || 'N/A'],
-            ["Contact:", projectInfo.contactNumber || 'N/A', null, "Email:", projectInfo.contactEmail || 'N/A'],
-            [],
-            [`Schedule Break: ${scheduleBreakName}`], [`Sequence: ${sequence.name}`], []
-        ];
-        const tableHeader = ['Scene #', 'Scene Description', 'Scene Setting', 'Day/Night', 'Date', 'Time', 'Type', 'Shoot Location', 'Pages', 'Duration', 'Status', 'Cast', 'Key Equipment', 'Contact', 'Notes'];
-        const tableBody = scenesToPrint.map(s => [s.number, s.description, s.sceneSetting, s.dayNight, formatDateDDMMYYYY(s.date), s.time, s.type, s.shootLocation, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact, s.notes]);
-        const fullSheetData = projectHeader.concat([tableHeader]).concat(tableBody);
-        const worksheet = XLSX.utils.aoa_to_sheet(fullSheetData);
-        return worksheet;
-    };
-
-    // --- Main Export Logic ---
     try {
         if (isFullProject) {
-            // --- LOGIC FOR FULL PROJECT EXPORT ---
             let exportedCount = 0;
             orderedPanelItems.forEach(item => {
                 if (item.type === 'sequence' && item.scenes && item.scenes.length > 0) {
-                    const worksheet = createSheet(item, item.scenes);
+                    const worksheet = createSheet(item, item.scenes, orderedPanelItems);
                     const safeSheetName = item.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31);
                     XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
                     exportedCount++;
                 }
             });
-            
             if (exportedCount === 0) {
                 alert("Export failed: No sequences with scenes were found in your project.");
                 return;
             }
-            
             XLSX.writeFile(workbook, `${(projectInfo.prodName || 'FullProject').replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
-            // ADDED: Success message
             alert(`Successfully exported ${exportedCount} sequence(s) into a single Excel file.`);
 
         } else {
-            // --- LOGIC FOR FILTERED OR SINGLE SEQUENCE EXPORT ---
             const isGlobalFilterActive = activeFilter.type !== 'all' && activeFilter.value !== '';
-            
             if (isGlobalFilterActive) {
                 const results = getGloballyFilteredResults();
                 if (results.length === 0) {
@@ -746,18 +707,15 @@ function saveAsExcel(isFullProject = false) {
                 const worksheet = XLSX.utils.aoa_to_sheet(dataForSheet);
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Results");
                 XLSX.writeFile(workbook, `Filtered_Results_Schedule.xlsx`);
-                // ADDED: Success message
                 alert(`Successfully exported filtered results.`);
             } else {
                 const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
                 if (!activeSequence) { alert("Please select a sequence to export."); return; }
                 const scenesToExport = getVisibleScenes();
                 if (scenesToExport.length === 0) { alert(`No scenes in "${activeSequence.name}" to export.`); return; }
-                
-                const worksheet = createSheet(activeSequence, scenesToExport);
+                const worksheet = createSheet(activeSequence, scenesToExport, orderedPanelItems);
                 XLSX.utils.book_append_sheet(workbook, worksheet, activeSequence.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31));
                 XLSX.writeFile(workbook, `${activeSequence.name.replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
-                // ADDED: Success message
                 alert(`Successfully exported the "${activeSequence.name}" sequence.`);
             }
         }
@@ -767,53 +725,31 @@ function saveAsExcel(isFullProject = false) {
     }
 }
 
-// --- LOGIC FOR FULL PROJECT OR SINGLE SEQUENCE EXPORT ---
-    const createSheet = (sequence, scenesToPrint) => {
-        let scheduleBreakName = 'Uncategorized';
-        const sequenceIndex = orderedPanelItems.findIndex(item => item.id === sequence.id);
-        if (sequenceIndex > -1) {
-            for (let i = sequenceIndex - 1; i >= 0; i--) {
-                if (orderedPanelItems[i].type === 'schedule_break') {
-                    scheduleBreakName = orderedPanelItems[i].name;
-                    break;
-                }
+function createSheet(sequence, scenesToPrint, panelItems) {
+    const projectInfo = projectData.projectInfo || {};
+    let scheduleBreakName = 'Uncategorized';
+    const sequenceIndex = panelItems.findIndex(item => item.id === sequence.id);
+    if (sequenceIndex > -1) {
+        for (let i = sequenceIndex - 1; i >= 0; i--) {
+            if (panelItems[i].type === 'schedule_break') {
+                scheduleBreakName = panelItems[i].name;
+                break;
             }
         }
-        const projectHeader = [
-            ["Production:", projectInfo.prodName || 'N/A', null, "Director:", projectInfo.directorName || 'N/A'],
-            ["Contact:", projectInfo.contactNumber || 'N/A', null, "Email:", projectInfo.contactEmail || 'N/A'],
-            [],
-            [`Schedule Break: ${scheduleBreakName}`], [`Sequence: ${sequence.name}`], []
-        ];
-        const tableHeader = ['Scene #', 'Scene Description', 'Scene Setting', 'Day/Night', 'Date', 'Time', 'Type', 'Shoot Location', 'Pages', 'Duration', 'Status', 'Cast', 'Key Equipment', 'Contact', 'Notes'];
-        const tableBody = scenesToPrint.map(s => [s.number, s.description, s.sceneSetting, s.dayNight, formatDateDDMMYYYY(s.date), s.time, s.type, s.shootLocation, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact, s.notes]);
-        const fullSheetData = projectHeader.concat([tableHeader]).concat(tableBody);
-        const worksheet = XLSX.utils.aoa_to_sheet(fullSheetData);
-        return worksheet;
-    };
-
-    if (isFullProject) {
-        let exportedCount = 0;
-        orderedPanelItems.forEach(item => {
-            if (item.type === 'sequence' && item.scenes && item.scenes.length > 0) {
-                const worksheet = createSheet(item, item.scenes);
-                const safeSheetName = item.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31);
-                XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
-                exportedCount++;
-            }
-        });
-        if(exportedCount === 0){ alert("Export failed: No sequences with scenes were found."); return; }
-        XLSX.writeFile(workbook, `${(projectInfo.prodName || 'FullProject').replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
-    } else {
-        const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
-        if (!activeSequence) { alert("Please select a sequence to export."); return; }
-        const scenesToExport = getVisibleScenes();
-        if (scenesToExport.length === 0) { alert(`No scenes in "${activeSequence.name}" to export.`); return; }
-        const worksheet = createSheet(activeSequence, scenesToExport);
-        XLSX.utils.book_append_sheet(workbook, worksheet, activeSequence.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31));
-        XLSX.writeFile(workbook, `${activeSequence.name.replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
     }
+    const projectHeader = [
+        ["Production:", projectInfo.prodName || 'N/A', null, "Director:", projectInfo.directorName || 'N/A'],
+        ["Contact:", projectInfo.contactNumber || 'N/A', null, "Email:", projectInfo.contactEmail || 'N/A'],
+        [],
+        [`Schedule Break: ${scheduleBreakName}`], [`Sequence: ${sequence.name}`], []
+    ];
+    const tableHeader = ['Scene #', 'Scene Description', 'Scene Setting', 'Day/Night', 'Date', 'Time', 'Type', 'Shoot Location', 'Pages', 'Duration', 'Status', 'Cast', 'Key Equipment', 'Contact', 'Notes'];
+    const tableBody = scenesToPrint.map(s => [s.number, s.description, s.sceneSetting, s.dayNight, formatDateDDMMYYYY(s.date), s.time, s.type, s.shootLocation, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact, s.notes]);
+    const fullSheetData = projectHeader.concat([tableHeader]).concat(tableBody);
+    const worksheet = XLSX.utils.aoa_to_sheet(fullSheetData);
+    return worksheet;
 }
+
 
 async function shareProject() {
     const projectInfo = projectData.projectInfo || {};
@@ -834,21 +770,14 @@ async function shareScene(id) {
     for (const item of projectData.panelItems) {
         if (item.type === 'sequence' && item.scenes) {
             const foundScene = item.scenes.find(s => s.id === id);
-            if (foundScene) {
-                scene = foundScene;
-                sequence = item;
-                break;
-            }
+            if (foundScene) { scene = foundScene; sequence = item; break; }
         }
     }
     if (!scene || !sequence) return;
-
     const projectInfo = projectData.projectInfo || {};
-    
     let scheduleBreakName = 'Uncategorized';
     const orderedPanelItems = getOrderedPanelItems();
     const sequenceIndex = orderedPanelItems.findIndex(item => item.id === sequence.id);
-
     if (sequenceIndex > -1) {
         for (let i = sequenceIndex - 1; i >= 0; i--) {
             if (orderedPanelItems[i].type === 'schedule_break') {
@@ -857,9 +786,7 @@ async function shareScene(id) {
             }
         }
     }
-    
     const notesHTML = scene.notes ? `<div class="share-card-item"><strong>Notes:</strong> ${scene.notes}</div>` : '';
-
     const template = document.getElementById('share-card-template');
     template.innerHTML = `
         <div class="share-card-content">
@@ -885,7 +812,6 @@ async function shareScene(id) {
             </div>
         </div>
     `;
-    
    try {
         const canvas = await html2canvas(template, { useCORS: true, backgroundColor: '#1f2937' });
         canvas.toBlob(async (blob) => {
