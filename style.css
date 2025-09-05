@@ -40,7 +40,6 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
     font-weight: 600; border: 1px solid var(--border-color); background-color: var(--background-color);
     padding: 10px; border-radius: 8px;
 }
-/* NEW: Rule to make textarea span the full grid width */
 .form-grid textarea {
     grid-column: 1 / -1;
     resize: vertical;
@@ -100,6 +99,27 @@ button { padding: 10px 20px; border-radius: 6px; font-size: 1rem; font-weight: 6
 .share-btn-strip:hover { opacity: 1; color: var(--primary-color); }
 .edit-btn-strip { background: none; border: none; color: var(--text-color); font-size: 1.2rem; cursor: pointer; padding: 0; line-height: 1; opacity: 0.8; }
 .edit-btn-strip:hover { opacity: 1; color: var(--primary-color); }
+
+/* NEW: Headers for Global Filter View */
+.schedule-break-header {
+    background-color: var(--background-color);
+    color: #9ca3af;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 6px;
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
+.sequence-header {
+    color: var(--primary-color);
+    padding: 5px 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+    border-bottom: 1px solid var(--border-color);
+}
 
 
 /* --- Side Panel for Sequences --- */
@@ -187,12 +207,11 @@ button { padding: 10px 20px; border-radius: 6px; font-size: 1rem; font-weight: 6
 #share-card-template { position: absolute; left: -9999px; top: auto; width: 400px; background-color: #1f2937; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; border-radius: 12px; border: 1px solid #3b82f6; }
 .share-card-content { padding: 25px; display: flex; flex-direction: column; gap: 10px; }
 .share-card-header { text-align: left; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 8px; }
-/* CHANGED: h1 font size is reduced */
 .share-card-header h1 { margin: 0; font-size: 1.5rem; color: var(--primary-color); font-weight: 700; }
 .share-card-header h2 { margin: 5px 0 0; font-size: 1.1rem; font-weight: 400; color: #d1d5db; }
 .share-card-item { font-size: 1.1rem; line-height: 1.5; }
 .share-card-item strong { color: #9ca3af; font-weight: 600; margin-right: 8px; }
-.share-card-item.description { white-space: pre-wrap; word-wrap: break-word; } /* To wrap long descriptions */
+.share-card-item.description { white-space: pre-wrap; word-wrap: break-word; }
 .share-card-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); }
 .footer-project-info { text-align: left; line-height: 1.5; }
 .footer-project-info div { font-size: 0.9rem; }
