@@ -163,11 +163,14 @@ function setActiveItem(id) {
     }
 }
 
+// MODIFIED: This now adds a data-id attribute to each item for reliable ordering.
 function renderSequencePanel() {
     const listContainer = document.getElementById('sequence-list');
     listContainer.innerHTML = '';
     projectData.panelItems.forEach(item => {
         const element = document.createElement('div');
+        element.dataset.id = item.id; // <-- IMPORTANT: Add this for tracking order from the DOM
+
         const itemName = document.createElement('span');
         itemName.className = 'panel-item-name';
         itemName.textContent = item.name;
@@ -609,19 +612,37 @@ function handleDeleteFromModal() {
 // =================================================================
 // --- EXPORT & SHARE FUNCTIONS ---
 // =================================================================
-// REWRITTEN & FIXED: This function is now more robust and handles the dynamic schedule break logic correctly.
+// NEW HELPER FUNCTION: Reads the current visual order from the DOM
+function getOrderedPanelItems() {
+    const listContainer = document.getElementById('sequence-list');
+    const itemElements = Array.from(listContainer.children);
+    const orderedIds = itemElements.map(el => parseInt(el.dataset.id));
+    
+    // Create a new array of panel items based on the visual order
+    const orderedItems = orderedIds.map(id => 
+        projectData.panelItems.find(pItem => pItem.id === id)
+    ).filter(Boolean); // Filter out any potential mismatches
+    
+    return orderedItems;
+}
+
+
+// REWRITTEN & FIXED: This function now uses the new helper to get the correct order.
 function saveAsExcel(isFullProject = false) {
     const projectInfo = projectData.projectInfo || {};
     const workbook = XLSX.utils.book_new();
+    const orderedPanelItems = getOrderedPanelItems(); // Get the correct visual order
 
     const createSheet = (sequence, scenesToPrint) => {
         let scheduleBreakName = 'Uncategorized';
-        const sequenceIndex = projectData.panelItems.findIndex(item => item.id === sequence.id);
+        // Use the visually ordered array to find the sequence's index
+        const sequenceIndex = orderedPanelItems.findIndex(item => item.id === sequence.id);
         
         if (sequenceIndex > -1) {
+            // Look backwards in the visually ordered array
             for (let i = sequenceIndex - 1; i >= 0; i--) {
-                if (projectData.panelItems[i].type === 'schedule_break') {
-                    scheduleBreakName = projectData.panelItems[i].name;
+                if (orderedPanelItems[i].type === 'schedule_break') {
+                    scheduleBreakName = orderedPanelItems[i].name;
                     break;
                 }
             }
@@ -666,7 +687,8 @@ function saveAsExcel(isFullProject = false) {
 
     if (isFullProject) {
         let exportedCount = 0;
-        projectData.panelItems.forEach(item => {
+        // Iterate over the visually ordered array
+        orderedPanelItems.forEach(item => {
             if (item.type === 'sequence' && item.scenes && item.scenes.length > 0) {
                 const worksheet = createSheet(item, item.scenes);
                 const safeSheetName = item.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31);
@@ -716,6 +738,7 @@ async function shareProject() {
     }
 }
 
+// MODIFIED: This function now also uses the new robust ordering logic.
 async function shareScene(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence) return;
@@ -724,11 +747,13 @@ async function shareScene(id) {
     const projectInfo = projectData.projectInfo || {};
     
     let scheduleBreakName = 'Uncategorized';
-    const sequenceIndex = projectData.panelItems.findIndex(item => item.id === activeSequence.id);
+    const orderedPanelItems = getOrderedPanelItems(); // Get the correct visual order
+    const sequenceIndex = orderedPanelItems.findIndex(item => item.id === activeSequence.id);
+
     if (sequenceIndex > -1) {
         for (let i = sequenceIndex - 1; i >= 0; i--) {
-            if (projectData.panelItems[i].type === 'schedule_break') {
-                scheduleBreakName = projectData.panelItems[i].name;
+            if (orderedPanelItems[i].type === 'schedule_break') {
+                scheduleBreakName = orderedPanelItems[i].name;
                 break;
             }
         }
