@@ -609,17 +609,15 @@ function handleDeleteFromModal() {
 // =================================================================
 // --- EXPORT & SHARE FUNCTIONS ---
 // =================================================================
-// REWRITTEN: This function is now more robust and handles the dynamic schedule break logic.
+// REWRITTEN & FIXED: This function is now more robust and handles the dynamic schedule break logic correctly.
 function saveAsExcel(isFullProject = false) {
     const projectInfo = projectData.projectInfo || {};
     const workbook = XLSX.utils.book_new();
 
     const createSheet = (sequence, scenesToPrint) => {
         let scheduleBreakName = 'Uncategorized';
-        // Find the sequence by its unique ID to get its current index
         const sequenceIndex = projectData.panelItems.findIndex(item => item.id === sequence.id);
         
-        // If found, look backwards for the preceding schedule break
         if (sequenceIndex > -1) {
             for (let i = sequenceIndex - 1; i >= 0; i--) {
                 if (projectData.panelItems[i].type === 'schedule_break') {
@@ -670,7 +668,6 @@ function saveAsExcel(isFullProject = false) {
         let exportedCount = 0;
         projectData.panelItems.forEach(item => {
             if (item.type === 'sequence' && item.scenes && item.scenes.length > 0) {
-                // Pass the whole sequence item and its scenes
                 const worksheet = createSheet(item, item.scenes);
                 const safeSheetName = item.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31);
                 XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
@@ -692,7 +689,6 @@ function saveAsExcel(isFullProject = false) {
         const scenesToExport = getVisibleScenes();
         if (scenesToExport.length === 0) { alert(`No visible scenes in "${activeSequence.name}" to export.`); return; }
         
-        // Pass the active sequence object and the (potentially filtered) list of scenes
         const worksheet = createSheet(activeSequence, scenesToExport);
         XLSX.utils.book_append_sheet(workbook, worksheet, activeSequence.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31));
         XLSX.writeFile(workbook, `${activeSequence.name.replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
@@ -720,7 +716,6 @@ async function shareProject() {
     }
 }
 
-// REWRITTEN: This function now also finds and includes the dynamic schedule break name.
 async function shareScene(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence) return;
@@ -728,7 +723,6 @@ async function shareScene(id) {
     if (!scene) return;
     const projectInfo = projectData.projectInfo || {};
     
-    // Find the schedule break name dynamically
     let scheduleBreakName = 'Uncategorized';
     const sequenceIndex = projectData.panelItems.findIndex(item => item.id === activeSequence.id);
     if (sequenceIndex > -1) {
