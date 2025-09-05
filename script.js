@@ -42,14 +42,16 @@ function setupEventListeners() {
             element.addEventListener('click', (e) => {
                 e.preventDefault();
                 handler(e);
-                document.getElementById('dropdown-menu').classList.remove('show');
+                if (document.getElementById('dropdown-menu')) {
+                    document.getElementById('dropdown-menu').classList.remove('show');
+                }
             });
         } else {
             console.error(`Error: Dropdown element with ID '${id}' not found.`);
         }
     };
 
-    // NEW: Event listeners for the splash screen buttons
+    // Splash screen listeners
     safeAddListener('start-new-project-btn', 'click', () => {
         hideSplashScreen();
         openProjectModal();
@@ -57,14 +59,11 @@ function setupEventListeners() {
 
     safeAddListener('open-project-link', 'click', (e) => {
         e.preventDefault();
-        // We don't hide the splash screen here, because if the user cancels
-        // the file picker, we want them to stay on the splash screen.
-        // It will be hidden after a file is successfully loaded.
         document.getElementById('file-input').click();
     });
 
+    // Main app listeners
     safeAddListener('schedule-form', 'submit', handleAddScene);
-
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const dropdownMenu = document.getElementById('dropdown-menu');
     if(hamburgerBtn && dropdownMenu) {
@@ -85,14 +84,12 @@ function setupEventListeners() {
     if(autoSaveBtn) autoSaveBtn.addEventListener('click', (e) => { e.preventDefault(); toggleAutoSave(); });
 
     safeAddListener('file-input', 'change', openProjectFile);
-
     const sequencePanel = document.getElementById('sequence-panel');
     safeAddListener('sequence-hamburger-btn', 'click', () => sequencePanel.classList.add('open'));
     safeAddListener('close-panel-btn', 'click', () => sequencePanel.classList.remove('open'));
     safeAddListener('add-schedule-break-btn', 'click', handleAddScheduleBreak);
     safeAddListener('export-panel-btn', 'click', () => saveAsExcel(false));
     safeAddListener('filter-by-select', 'change', handleFilterChange);
-
     safeAddListener('close-project-modal', 'click', closeProjectModal);
     safeAddListener('save-project-info-btn', 'click', handleSaveProjectInfo);
     safeAddListener('close-edit-modal', 'click', closeEditModal);
@@ -109,12 +106,18 @@ function setupEventListeners() {
 }
 
 // =================================================================
-// --- SPLASH SCREEN LOGIC ---
+// --- SPLASH SCREEN & APP VISIBILITY ---
 // =================================================================
 function hideSplashScreen() {
     document.getElementById('splash-screen').style.display = 'none';
     document.getElementById('main-app-container').style.display = 'block';
 }
+
+function showSplashScreen() {
+    document.getElementById('splash-screen').style.display = 'flex';
+    document.getElementById('main-app-container').style.display = 'none';
+}
+
 
 // =================================================================
 // --- DRAG-AND-DROP INITIALIZATION ---
@@ -184,11 +187,9 @@ function renderSequencePanel() {
     projectData.panelItems.forEach(item => {
         const element = document.createElement('div');
         element.dataset.id = item.id;
-
         const itemName = document.createElement('span');
         itemName.className = 'panel-item-name';
         itemName.textContent = item.name;
-
         const editBtn = document.createElement('button');
         editBtn.className = 'edit-item-btn';
         editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
@@ -197,20 +198,17 @@ function renderSequencePanel() {
             e.stopPropagation(); 
             handleEditItem(item.id);
         };
-
         if (item.type === 'sequence') {
             element.className = `sequence-item ${item.id === projectData.activeItemId && activeFilter.type === 'all' ? 'active' : ''}`;
             element.onclick = () => setActiveItem(item.id);
         } else if (item.type === 'schedule_break') {
             element.className = 'schedule-break-item';
         }
-
         element.appendChild(itemName);
         element.appendChild(editBtn);
         listContainer.appendChild(element);
     });
 }
-
 
 // =================================================================
 // --- FILTERING LOGIC ---
@@ -219,13 +217,11 @@ function handleFilterChange(e) {
     const filterType = document.getElementById('filter-by-select').value;
     const filterControls = document.getElementById('filter-controls');
     filterControls.innerHTML = ''; 
-    
     if (filterType === 'all') {
         activeFilter = { type: 'all', value: '' };
         renderSchedule();
         return;
     }
-
     let inputElement;
     const textFilters = ['cast', 'shootLocation', 'sceneSetting'];
     const selectFilters = {
@@ -233,7 +229,6 @@ function handleFilterChange(e) {
         dayNight: ['DAY', 'NIGHT'],
         type: ['INT', 'EXT', 'INT/EXT']
     };
-
     if (filterType === 'date') {
         inputElement = document.createElement('input');
         inputElement.type = 'date';
@@ -249,7 +244,6 @@ function handleFilterChange(e) {
         });
         inputElement.innerHTML = optionsHTML;
     }
-
     if (inputElement) {
         inputElement.className = 'panel-sort';
         const updateFilter = (e) => {
@@ -262,7 +256,6 @@ function handleFilterChange(e) {
         }
         filterControls.appendChild(inputElement);
     }
-    
     activeFilter = { type: filterType, value: '' }; 
     renderSchedule(); 
 }
@@ -271,7 +264,6 @@ function getGloballyFilteredResults() {
     const results = [];
     const orderedPanelItems = getOrderedPanelItems();
     let currentScheduleBreak = 'Uncategorized';
-
     orderedPanelItems.forEach(item => {
         if (item.type === 'schedule_break') {
             currentScheduleBreak = item.name;
@@ -283,7 +275,6 @@ function getGloballyFilteredResults() {
                 const filterValue = activeFilter.value.toLowerCase();
                 return sceneValue.includes(filterValue);
             });
-
             if (matchingScenes.length > 0) {
                 results.push({
                     scheduleBreak: currentScheduleBreak,
@@ -321,7 +312,6 @@ function handleAddScene(e) {
         alert("Please select a sequence before adding a scene.");
         return;
     }
-    
     const newScene = {
         id: Date.now(), description: document.getElementById('scene-description').value,
         number: document.getElementById('scene-number').value, sceneSetting: document.getElementById('scene-setting').value,
@@ -346,20 +336,15 @@ function renderSchedule() {
     const pagination = document.getElementById('pagination-controls');
     container.innerHTML = '';
     pagination.innerHTML = '';
-
     const isGlobalFilterActive = activeFilter.type !== 'all' && activeFilter.value !== '';
-
     if (isGlobalFilterActive) {
         const filterName = document.querySelector(`#filter-by-select option[value="${activeFilter.type}"]`).textContent;
         display.textContent = `Filtered Results for: "${activeFilter.value}" in ${filterName}`;
-        
         const results = getGloballyFilteredResults();
-        
         if (results.length === 0) {
             container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes found matching the filter.</p>`;
             return;
         }
-
         let lastBreak = null;
         results.forEach(result => {
             if (result.scheduleBreak !== lastBreak) {
@@ -369,29 +354,23 @@ function renderSchedule() {
                 container.appendChild(breakHeader);
                 lastBreak = result.scheduleBreak;
             }
-
             const seqHeader = document.createElement('div');
             seqHeader.className = 'sequence-header';
             seqHeader.textContent = result.sequence.name;
             container.appendChild(seqHeader);
-
             result.scenes.forEach(scene => renderSceneStrip(scene, container));
         });
-
     } else {
         const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
         if (!activeSequence || activeSequence.type !== 'sequence') {
             display.textContent = 'No active sequence. Create or select a sequence.';
             return;
         }
-        
         display.textContent = `Current Sequence: ${activeSequence.name}`;
         const allScenes = getVisibleScenes();
-        
         const startIndex = (currentPage - 1) * scenesPerPage;
         const endIndex = startIndex + scenesPerPage;
         const paginatedScenes = allScenes.slice(startIndex, endIndex);
-
         if (allScenes.length === 0) {
             container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes yet. Add one below!</p>`;
         } else {
@@ -426,13 +405,11 @@ function renderSceneStrip(scene, container) {
     container.appendChild(stripWrapper);
 }
 
-
 function renderPaginationControls(totalItems, itemsPerPage) {
     const container = document.getElementById('pagination-controls');
     container.innerHTML = '';
     if (totalItems <= itemsPerPage) return;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
-
     const prevButton = document.createElement('button');
     prevButton.textContent = 'Previous';
     prevButton.className = 'btn-primary';
@@ -443,11 +420,9 @@ function renderPaginationControls(totalItems, itemsPerPage) {
             renderSchedule();
         }
     });
-
     const pageInfo = document.createElement('span');
     pageInfo.className = 'page-info';
     pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-
     const nextButton = document.createElement('button');
     nextButton.textContent = 'Next';
     nextButton.className = 'btn-primary';
@@ -458,12 +433,10 @@ function renderPaginationControls(totalItems, itemsPerPage) {
             renderSchedule();
         }
     });
-
     container.appendChild(prevButton);
     container.appendChild(pageInfo);
     container.appendChild(nextButton);
 }
-
 
 function deleteScene(id) {
     projectData.panelItems.forEach(item => {
@@ -478,20 +451,18 @@ function deleteScene(id) {
 // =================================================================
 // --- DATA PERSISTENCE & PROJECT FILES ---
 // =================================================================
-// MODIFIED: This function now decides whether to show the splash screen or the main app.
+function saveProjectData(isBackup = false) {
+    const key = isBackup ? 'projectData_backup' : 'projectData';
+    localStorage.setItem(key, JSON.stringify(projectData));
+}
+
 function loadProjectData() {
     let savedData = localStorage.getItem('projectData');
-    
-    // NEW: Check if data exists
     if (!savedData) {
-        // NO DATA: Show the splash screen
-        document.getElementById('splash-screen').style.display = 'flex';
-        return; // Stop here, don't load anything else
+        showSplashScreen();
+        return; 
     }
-
-    // DATA EXISTS: Hide splash and show the main app
     hideSplashScreen();
-
     const backupData = localStorage.getItem('projectData_backup');
     if (!savedData && backupData) {
         if (confirm("No main save data found, but a backup exists. Would you like to restore the backup?")) {
@@ -516,16 +487,14 @@ function loadProjectData() {
     renderSequencePanel();
 }
 
-// MODIFIED: When clearing a project, reload the app to show the splash screen again.
 function clearProject() {
     if (confirm('Are you sure you want to clear the entire project? This action cannot be undone.')) {
         localStorage.removeItem('projectData');
         localStorage.removeItem('projectData_backup');
-        location.reload(); // Reload the page to show the splash screen
+        location.reload();
     }
 }
 
-// MODIFIED: When opening a file, hide the splash screen on success.
 function openProjectFile(event) {
     const file = event.target.files[0];
     if (!file) { return; }
@@ -542,8 +511,8 @@ function openProjectFile(event) {
                     if (firstSequence) projectData.activeItemId = firstSequence.id;
                 }
                 saveProjectData();
-                hideSplashScreen(); // <-- Hide splash screen on success
-                loadProjectData(); // Reload the UI with the new data
+                hideSplashScreen(); 
+                loadProjectData(); 
                 alert("Project loaded successfully.");
             } else {
                 alert("Invalid project file format.");
@@ -561,7 +530,6 @@ function openProjectFile(event) {
     };
     reader.readAsText(file);
 }
-
 
 // =================================================================
 // --- MODAL LOGIC ---
@@ -596,9 +564,7 @@ function openEditModal(id) {
             }
         }
     }
-
     if (!scene) return;
-    
     document.getElementById('edit-scene-id').value = scene.id;
     document.getElementById('edit-scene-number').value = scene.number || '';
     document.getElementById('edit-scene-description').value = scene.description || '';
@@ -623,7 +589,6 @@ function handleSaveChanges() {
     const sceneId = parseInt(document.getElementById('edit-scene-id').value);
     let sceneIndex = -1;
     let sequence;
-
     for (const item of projectData.panelItems) {
         if (item.type === 'sequence' && item.scenes) {
             sceneIndex = item.scenes.findIndex(s => s.id === sceneId);
@@ -633,9 +598,7 @@ function handleSaveChanges() {
             }
         }
     }
-
     if (!sequence || sceneIndex === -1) return;
-
     sequence.scenes[sceneIndex] = {
         id: sceneId,
         number: document.getElementById('edit-scene-number').value, description: document.getElementById('edit-scene-description').value,
@@ -672,12 +635,10 @@ function getOrderedPanelItems() {
     return orderedItems;
 }
 
-
 function saveAsExcel(isFullProject = false) {
     const projectInfo = projectData.projectInfo || {};
     const workbook = XLSX.utils.book_new();
     const orderedPanelItems = getOrderedPanelItems();
-
     try {
         if (isFullProject) {
             let exportedCount = 0;
@@ -695,7 +656,6 @@ function saveAsExcel(isFullProject = false) {
             }
             XLSX.writeFile(workbook, `${(projectInfo.prodName || 'FullProject').replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
             alert(`Successfully exported ${exportedCount} sequence(s) into a single Excel file.`);
-
         } else {
             const isGlobalFilterActive = activeFilter.type !== 'all' && activeFilter.value !== '';
             if (isGlobalFilterActive) {
@@ -762,7 +722,6 @@ function createSheet(sequence, scenesToPrint, panelItems) {
     const worksheet = XLSX.utils.aoa_to_sheet(fullSheetData);
     return worksheet;
 }
-
 
 async function shareProject() {
     const projectInfo = projectData.projectInfo || {};
@@ -871,5 +830,11 @@ function toggleAutoSave() {
         statusEl.textContent = 'ON';
         statusEl.className = 'auto-save-status on';
         alert('Auto-save is now ON. Your project will be saved to this browser\'s storage every 2 minutes.');
+    }
+}
+function setStatusBarHeight(heightInPixels) {
+    const pageHeader = document.querySelector('.page-header');
+    if (pageHeader) {
+        pageHeader.style.paddingTop = `${heightInPixels}px`;
     }
 }
