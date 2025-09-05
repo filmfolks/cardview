@@ -202,6 +202,7 @@ function handleFilterChange(e) {
     renderFilterControls();
 }
 
+// REWRITTEN & FIXED: This function now correctly creates controls for all filter types.
 function renderFilterControls() {
     const filterContainer = document.getElementById('filter-controls');
     filterContainer.innerHTML = '';
@@ -214,31 +215,34 @@ function renderFilterControls() {
     }
 
     let inputElement;
-    // CHANGED: Added new filter types
-    if (['date', 'status', 'cast', 'shootLocation', 'sceneSetting', 'dayNight'].includes(filterType)) {
-        if (filterType === 'date') {
-            inputElement = document.createElement('input');
-            inputElement.type = 'date';
-        } else if (filterType === 'status') {
-            inputElement = document.createElement('select');
-            inputElement.innerHTML = `<option value="">Select Status</option><option value="Pending">Pending</option><option value="NOT SHOT">NOT SHOT</option><option value="Done">Done</option>`;
-        } else if (filterType === 'dayNight') {
-            inputElement = document.createElement('select');
-            inputElement.innerHTML = `<option value="">Select Time</option><option value="DAY">DAY</option><option value="NIGHT">NIGHT</option>`;
-        } else {
-            inputElement = document.createElement('input');
-            inputElement.type = 'text';
-            const placeholders = {
-                cast: 'Enter Cast Name',
-                shootLocation: 'Enter Shoot Location',
-                sceneSetting: 'Enter Scene Setting'
-            };
-            inputElement.placeholder = placeholders[filterType];
-        }
-        inputElement.className = 'panel-sort';
+
+    // Group text-based filters
+    const textFilters = ['cast', 'shootLocation', 'sceneSetting'];
+    // Group select-based filters
+    const selectFilters = {
+        status: ['Pending', 'NOT SHOT', 'Done'],
+        dayNight: ['DAY', 'NIGHT'],
+        type: ['INT', 'EXT', 'INT/EXT']
+    };
+
+    if (filterType === 'date') {
+        inputElement = document.createElement('input');
+        inputElement.type = 'date';
+    } else if (textFilters.includes(filterType)) {
+        inputElement = document.createElement('input');
+        inputElement.type = 'text';
+        inputElement.placeholder = `Enter ${filterType.replace(/([A-Z])/g, ' $1').toLowerCase()}`; // e.g. "enter shoot location"
+    } else if (Object.keys(selectFilters).includes(filterType)) {
+        inputElement = document.createElement('select');
+        let optionsHTML = `<option value="">Select ${filterType.replace(/([A-Z])/g, ' $1').toLowerCase()}</option>`;
+        selectFilters[filterType].forEach(option => {
+            optionsHTML += `<option value="${option}">${option}</option>`;
+        });
+        inputElement.innerHTML = optionsHTML;
     }
 
     if (inputElement) {
+        inputElement.className = 'panel-sort';
         const updateFilter = (e) => {
             currentPage = 1;
             activeFilter = { type: filterType, value: e.target.value.trim().toLowerCase() };
@@ -249,9 +253,10 @@ function renderFilterControls() {
              inputElement.addEventListener('keyup', updateFilter);
         }
         filterContainer.appendChild(inputElement);
-        activeFilter = { type: filterType, value: '' };
-        renderSchedule();
     }
+    
+    activeFilter = { type: filterType, value: '' };
+    renderSchedule();
 }
 
 function getVisibleScenes() {
@@ -284,6 +289,7 @@ function resetFilter() {
 // =================================================================
 // --- CORE SCHEDULE FUNCTIONS ---
 // =================================================================
+// FIXED: This function now correctly gets values from all form fields by their proper IDs.
 function handleAddScene(e) {
     e.preventDefault();
     let activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
@@ -294,7 +300,7 @@ function handleAddScene(e) {
             if(!activeSequence) return;
         } else { return; }
     }
-    // CHANGED: Scene object now includes all new and renamed fields
+    
     const newScene = {
         id: Date.now(),
         description: document.getElementById('scene-description').value,
@@ -342,7 +348,7 @@ function renderSchedule() {
     const paginatedScenes = allMatchingScenes.slice(startIndex, endIndex);
 
     if (allMatchingScenes.length === 0) {
-        if (activeFilter.type !== 'all') {
+        if (activeFilter.type !== 'all' && activeFilter.value !== '') {
             container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes match the current filter.</p>`;
         } else {
              container.innerHTML = `<p style="text-align:center; color: #9ca3af;">No scenes yet. Add one below!</p>`;
@@ -352,12 +358,11 @@ function renderSchedule() {
             const stripWrapper = document.createElement('div');
             stripWrapper.className = 'scene-strip-wrapper';
             const statusClass = scene.status.replace(/\s+/g, '-').toLowerCase();
-            // CHANGED: Scene strip updated with new fields
             stripWrapper.innerHTML = `
                 <div class="scene-strip" id="scene-strip-${scene.id}">
                     <div class="strip-item"><strong>#${scene.number}</strong></div>
-                    <div class="strip-item">${scene.type} ${scene.sceneSetting} - ${scene.dayNight}</div>
-                    <div class="strip-item">${scene.description.substring(0, 50)}...</div>
+                    <div class="strip-item">${scene.type || ''} ${scene.sceneSetting || ''} - ${scene.dayNight || ''}</div>
+                    <div class="strip-item">${(scene.description || '').substring(0, 50)}...</div>
                     <div class="strip-item">${formatDateDDMMYYYY(scene.date)}</div><div class="strip-item">${formatTime12Hour(scene.time)}</div>
                     <div class="strip-item">Location: <strong>${scene.shootLocation}</strong></div>
                     <div class="strip-item">Pages: <strong>${scene.pages || 'N/A'}</strong></div>
@@ -543,32 +548,33 @@ function handleSaveProjectInfo() {
     saveProjectData();
     closeProjectModal();
 }
-// CHANGED: Edit modal now populates all new fields
+
 function openEditModal(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence) return;
     const scene = activeSequence.scenes.find(s => s.id === id);
     if (!scene) return;
     document.getElementById('edit-scene-id').value = scene.id;
-    document.getElementById('edit-scene-number').value = scene.number;
-    document.getElementById('edit-scene-description').value = scene.description;
-    document.getElementById('edit-scene-setting').value = scene.sceneSetting;
-    document.getElementById('edit-day-night').value = scene.dayNight;
-    document.getElementById('edit-scene-date').value = scene.date;
-    document.getElementById('edit-scene-time').value = scene.time;
-    document.getElementById('edit-scene-type').value = scene.type;
-    document.getElementById('edit-shoot-location').value = scene.shootLocation;
-    document.getElementById('edit-scene-pages').value = scene.pages;
-    document.getElementById('edit-scene-duration').value = scene.duration;
-    document.getElementById('edit-scene-status').value = scene.status;
-    document.getElementById('edit-scene-cast').value = scene.cast;
-    document.getElementById('edit-scene-equipment').value = scene.equipment;
-    document.getElementById('edit-scene-contact').value = scene.contact;
-    document.getElementById('edit-scene-notes').value = scene.notes;
+    document.getElementById('edit-scene-number').value = scene.number || '';
+    document.getElementById('edit-scene-description').value = scene.description || '';
+    document.getElementById('edit-scene-setting').value = scene.sceneSetting || '';
+    document.getElementById('edit-day-night').value = scene.dayNight || 'DAY';
+    document.getElementById('edit-scene-date').value = scene.date || '';
+    document.getElementById('edit-scene-time').value = scene.time || '';
+    document.getElementById('edit-scene-type').value = scene.type || 'INT';
+    document.getElementById('edit-shoot-location').value = scene.shootLocation || '';
+    document.getElementById('edit-scene-pages').value = scene.pages || '';
+    document.getElementById('edit-scene-duration').value = scene.duration || '';
+    document.getElementById('edit-scene-status').value = scene.status || 'Pending';
+    document.getElementById('edit-scene-cast').value = scene.cast || '';
+    document.getElementById('edit-scene-equipment').value = scene.equipment || '';
+    document.getElementById('edit-scene-contact').value = scene.contact || '';
+    document.getElementById('edit-scene-notes').value = scene.notes || '';
     document.getElementById('edit-scene-modal').style.display = 'block';
 }
 function closeEditModal() { document.getElementById('edit-scene-modal').style.display = 'none'; }
-// CHANGED: Save changes now saves all new fields
+
+// FIXED: This function now correctly gets values from all edit modal fields by their proper IDs.
 function handleSaveChanges() {
     const sceneId = parseInt(document.getElementById('edit-scene-id').value);
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
@@ -632,10 +638,9 @@ function saveAsExcel(isFullProject = false) {
             [`Sequence: ${sheetName}`],
             []
         ];
-        // CHANGED: Excel headers updated
+        
         const tableHeader = ['Scene #', 'Scene Description', 'Scene Setting', 'Day/Night', 'Date', 'Time', 'Type', 'Shoot Location', 'Pages', 'Duration', 'Status', 'Cast', 'Key Equipment', 'Contact', 'Notes'];
         
-        // CHANGED: Excel body mapping updated
         const tableBody = scenes.map(s => [
             s.number, s.description, s.sceneSetting, s.dayNight, formatDateDDMMYYYY(s.date), s.time, s.type, s.shootLocation, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact, s.notes
         ]);
@@ -714,7 +719,6 @@ async function shareProject() {
     }
 }
 
-// CHANGED: Share card logic is completely updated
 async function shareScene(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence) return;
@@ -722,7 +726,6 @@ async function shareScene(id) {
     if (!scene) return;
     const projectInfo = projectData.projectInfo || {};
     
-    // Conditional Notes HTML
     const notesHTML = scene.notes ? `<div class="share-card-item"><strong>Notes:</strong> ${scene.notes}</div>` : '';
 
     const template = document.getElementById('share-card-template');
@@ -731,7 +734,7 @@ async function shareScene(id) {
             <div class="share-card-header">
                 <h1>Scene ${scene.number || 'N/A'}</h1>
             </div>
-            <div class="share-card-item"><strong>Scene Setting:</strong> ${scene.type} ${scene.sceneSetting} - ${scene.dayNight}</div>
+            <div class="share-card-item"><strong>Scene Setting:</strong> ${scene.type || ''} ${scene.sceneSetting || ''} - ${scene.dayNight || ''}</div>
             <div class="share-card-item description"><strong>Description:</strong> ${scene.description || 'N/A'}</div>
             <div class="share-card-item"><strong>Pages:</strong> ${scene.pages || 'N/A'}</div>
             <div class="share-card-item"><strong>Cast:</strong> ${scene.cast || 'N/A'}</div>
