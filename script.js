@@ -202,7 +202,6 @@ function handleFilterChange(e) {
     renderFilterControls();
 }
 
-// REWRITTEN & FIXED: This function now correctly creates controls for all filter types.
 function renderFilterControls() {
     const filterContainer = document.getElementById('filter-controls');
     filterContainer.innerHTML = '';
@@ -216,9 +215,7 @@ function renderFilterControls() {
 
     let inputElement;
 
-    // Group text-based filters
     const textFilters = ['cast', 'shootLocation', 'sceneSetting'];
-    // Group select-based filters
     const selectFilters = {
         status: ['Pending', 'NOT SHOT', 'Done'],
         dayNight: ['DAY', 'NIGHT'],
@@ -231,7 +228,7 @@ function renderFilterControls() {
     } else if (textFilters.includes(filterType)) {
         inputElement = document.createElement('input');
         inputElement.type = 'text';
-        inputElement.placeholder = `Enter ${filterType.replace(/([A-Z])/g, ' $1').toLowerCase()}`; // e.g. "enter shoot location"
+        inputElement.placeholder = `Enter ${filterType.replace(/([A-Z])/g, ' $1').toLowerCase()}`;
     } else if (Object.keys(selectFilters).includes(filterType)) {
         inputElement = document.createElement('select');
         let optionsHTML = `<option value="">Select ${filterType.replace(/([A-Z])/g, ' $1').toLowerCase()}</option>`;
@@ -289,7 +286,6 @@ function resetFilter() {
 // =================================================================
 // --- CORE SCHEDULE FUNCTIONS ---
 // =================================================================
-// FIXED: This function now correctly gets values from all form fields by their proper IDs.
 function handleAddScene(e) {
     e.preventDefault();
     let activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
@@ -574,7 +570,6 @@ function openEditModal(id) {
 }
 function closeEditModal() { document.getElementById('edit-scene-modal').style.display = 'none'; }
 
-// FIXED: This function now correctly gets values from all edit modal fields by their proper IDs.
 function handleSaveChanges() {
     const sceneId = parseInt(document.getElementById('edit-scene-id').value);
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
@@ -614,13 +609,17 @@ function handleDeleteFromModal() {
 // =================================================================
 // --- EXPORT & SHARE FUNCTIONS ---
 // =================================================================
+// REWRITTEN: This function is now more robust and handles the dynamic schedule break logic.
 function saveAsExcel(isFullProject = false) {
     const projectInfo = projectData.projectInfo || {};
     const workbook = XLSX.utils.book_new();
 
-    const createSheet = (scenes, sheetName) => {
+    const createSheet = (sequence, scenesToPrint) => {
         let scheduleBreakName = 'Uncategorized';
-        const sequenceIndex = projectData.panelItems.findIndex(item => item.name === sheetName && item.type === 'sequence');
+        // Find the sequence by its unique ID to get its current index
+        const sequenceIndex = projectData.panelItems.findIndex(item => item.id === sequence.id);
+        
+        // If found, look backwards for the preceding schedule break
         if (sequenceIndex > -1) {
             for (let i = sequenceIndex - 1; i >= 0; i--) {
                 if (projectData.panelItems[i].type === 'schedule_break') {
@@ -635,13 +634,13 @@ function saveAsExcel(isFullProject = false) {
             ["Contact:", projectInfo.contactNumber || 'N/A', null, "Email:", projectInfo.contactEmail || 'N/A'],
             [],
             [`Schedule Break: ${scheduleBreakName}`],
-            [`Sequence: ${sheetName}`],
+            [`Sequence: ${sequence.name}`],
             []
         ];
         
         const tableHeader = ['Scene #', 'Scene Description', 'Scene Setting', 'Day/Night', 'Date', 'Time', 'Type', 'Shoot Location', 'Pages', 'Duration', 'Status', 'Cast', 'Key Equipment', 'Contact', 'Notes'];
         
-        const tableBody = scenes.map(s => [
+        const tableBody = scenesToPrint.map(s => [
             s.number, s.description, s.sceneSetting, s.dayNight, formatDateDDMMYYYY(s.date), s.time, s.type, s.shootLocation, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact, s.notes
         ]);
 
@@ -655,7 +654,7 @@ function saveAsExcel(isFullProject = false) {
             { s: { r: 3, c: 0 }, e: { r: 3, c: numCols } }, { s: { r: 4, c: 0 }, e: { r: 4, c: numCols } }
         ];
         
-        if (scenes.length > 0) {
+        if (scenesToPrint.length > 0) {
              const colWidths = tableHeader.map((_, i) => {
                 const allValues = [tableHeader[i] || ''].concat(tableBody.map(row => (row[i] || '').toString()));
                 const maxLength = Math.max(...allValues.map(val => val.length));
@@ -671,7 +670,8 @@ function saveAsExcel(isFullProject = false) {
         let exportedCount = 0;
         projectData.panelItems.forEach(item => {
             if (item.type === 'sequence' && item.scenes && item.scenes.length > 0) {
-                const worksheet = createSheet(item.scenes, item.name);
+                // Pass the whole sequence item and its scenes
+                const worksheet = createSheet(item, item.scenes);
                 const safeSheetName = item.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31);
                 XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
                 exportedCount++;
@@ -692,7 +692,8 @@ function saveAsExcel(isFullProject = false) {
         const scenesToExport = getVisibleScenes();
         if (scenesToExport.length === 0) { alert(`No visible scenes in "${activeSequence.name}" to export.`); return; }
         
-        const worksheet = createSheet(scenesToExport, activeSequence.name);
+        // Pass the active sequence object and the (potentially filtered) list of scenes
+        const worksheet = createSheet(activeSequence, scenesToExport);
         XLSX.utils.book_append_sheet(workbook, worksheet, activeSequence.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31));
         XLSX.writeFile(workbook, `${activeSequence.name.replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
     }
@@ -719,12 +720,25 @@ async function shareProject() {
     }
 }
 
+// REWRITTEN: This function now also finds and includes the dynamic schedule break name.
 async function shareScene(id) {
     const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
     if (!activeSequence) return;
     const scene = activeSequence.scenes.find(s => s.id === id);
     if (!scene) return;
     const projectInfo = projectData.projectInfo || {};
+    
+    // Find the schedule break name dynamically
+    let scheduleBreakName = 'Uncategorized';
+    const sequenceIndex = projectData.panelItems.findIndex(item => item.id === activeSequence.id);
+    if (sequenceIndex > -1) {
+        for (let i = sequenceIndex - 1; i >= 0; i--) {
+            if (projectData.panelItems[i].type === 'schedule_break') {
+                scheduleBreakName = projectData.panelItems[i].name;
+                break;
+            }
+        }
+    }
     
     const notesHTML = scene.notes ? `<div class="share-card-item"><strong>Notes:</strong> ${scene.notes}</div>` : '';
 
@@ -733,6 +747,7 @@ async function shareScene(id) {
         <div class="share-card-content">
             <div class="share-card-header">
                 <h1>Scene ${scene.number || 'N/A'}</h1>
+                <h2>${scheduleBreakName} / ${activeSequence.name}</h2>
             </div>
             <div class="share-card-item"><strong>Scene Setting:</strong> ${scene.type || ''} ${scene.sceneSetting || ''} - ${scene.dayNight || ''}</div>
             <div class="share-card-item description"><strong>Description:</strong> ${scene.description || 'N/A'}</div>
