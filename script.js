@@ -665,45 +665,109 @@ function getOrderedPanelItems() {
 }
 
 
-// REWRITTEN: This function is now context-aware for global filtering.
+// REWRITTEN & FIXED: This function now correctly exports the full project and provides feedback.
 function saveAsExcel(isFullProject = false) {
     const projectInfo = projectData.projectInfo || {};
     const workbook = XLSX.utils.book_new();
-    const isGlobalFilterActive = activeFilter.type !== 'all' && activeFilter.value !== '';
-    const orderedPanelItems = getOrderedPanelItems();
+    const orderedPanelItems = getOrderedPanelItems(); // Get the correct visual order
 
-    // --- LOGIC FOR FILTERED EXPORT ---
-    if (!isFullProject && isGlobalFilterActive) {
-        const results = getGloballyFilteredResults();
-        if (results.length === 0) {
-            alert("No scenes match the current filter to export.");
-            return;
+    // This helper function remains the same, it's used by the main logic below.
+    const createSheet = (sequence, scenesToPrint) => {
+        let scheduleBreakName = 'Uncategorized';
+        const sequenceIndex = orderedPanelItems.findIndex(item => item.id === sequence.id);
+        
+        if (sequenceIndex > -1) {
+            for (let i = sequenceIndex - 1; i >= 0; i--) {
+                if (orderedPanelItems[i].type === 'schedule_break') {
+                    scheduleBreakName = orderedPanelItems[i].name;
+                    break;
+                }
+            }
         }
-
-        const dataForSheet = [
-            ['Production:', projectInfo.prodName || 'N/A'],
-            ['Director:', projectInfo.directorName || 'N/A'],
-            []
+        const projectHeader = [
+            ["Production:", projectInfo.prodName || 'N/A', null, "Director:", projectInfo.directorName || 'N/A'],
+            ["Contact:", projectInfo.contactNumber || 'N/A', null, "Email:", projectInfo.contactEmail || 'N/A'],
+            [],
+            [`Schedule Break: ${scheduleBreakName}`], [`Sequence: ${sequence.name}`], []
         ];
-        
-        const tableHeader = ['Schedule Break', 'Sequence', 'Scene #', 'Scene Description', 'Scene Setting', 'Day/Night', 'Date', 'Time', 'Type', 'Shoot Location', 'Pages', 'Duration', 'Status', 'Cast', 'Equipment', 'Contact', 'Notes'];
-        dataForSheet.push(tableHeader);
+        const tableHeader = ['Scene #', 'Scene Description', 'Scene Setting', 'Day/Night', 'Date', 'Time', 'Type', 'Shoot Location', 'Pages', 'Duration', 'Status', 'Cast', 'Key Equipment', 'Contact', 'Notes'];
+        const tableBody = scenesToPrint.map(s => [s.number, s.description, s.sceneSetting, s.dayNight, formatDateDDMMYYYY(s.date), s.time, s.type, s.shootLocation, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact, s.notes]);
+        const fullSheetData = projectHeader.concat([tableHeader]).concat(tableBody);
+        const worksheet = XLSX.utils.aoa_to_sheet(fullSheetData);
+        return worksheet;
+    };
 
-        results.forEach(result => {
-            result.scenes.forEach(s => {
-                dataForSheet.push([
-                    result.scheduleBreak, result.sequence.name, s.number, s.description, s.sceneSetting, s.dayNight, formatDateDDMMYYYY(s.date), s.time, s.type, s.shootLocation, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact, s.notes
-                ]);
+    // --- Main Export Logic ---
+    try {
+        if (isFullProject) {
+            // --- LOGIC FOR FULL PROJECT EXPORT ---
+            let exportedCount = 0;
+            orderedPanelItems.forEach(item => {
+                if (item.type === 'sequence' && item.scenes && item.scenes.length > 0) {
+                    const worksheet = createSheet(item, item.scenes);
+                    const safeSheetName = item.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
+                    exportedCount++;
+                }
             });
-        });
-        
-        const worksheet = XLSX.utils.aoa_to_sheet(dataForSheet);
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Results");
-        XLSX.writeFile(workbook, `Filtered_Results_Schedule.xlsx`);
-        return;
-    }
+            
+            if (exportedCount === 0) {
+                alert("Export failed: No sequences with scenes were found in your project.");
+                return;
+            }
+            
+            XLSX.writeFile(workbook, `${(projectInfo.prodName || 'FullProject').replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
+            // ADDED: Success message
+            alert(`Successfully exported ${exportedCount} sequence(s) into a single Excel file.`);
 
-    // --- LOGIC FOR FULL PROJECT OR SINGLE SEQUENCE EXPORT ---
+        } else {
+            // --- LOGIC FOR FILTERED OR SINGLE SEQUENCE EXPORT ---
+            const isGlobalFilterActive = activeFilter.type !== 'all' && activeFilter.value !== '';
+            
+            if (isGlobalFilterActive) {
+                const results = getGloballyFilteredResults();
+                if (results.length === 0) {
+                    alert("No scenes match the current filter to export.");
+                    return;
+                }
+                const dataForSheet = [
+                    ['Production:', projectInfo.prodName || 'N/A'], ['Director:', projectInfo.directorName || 'N/A'], [],
+                    [`Filter: ${activeFilter.type} = "${activeFilter.value}"`], []
+                ];
+                const tableHeader = ['Schedule Break', 'Sequence', 'Scene #', 'Scene Description', 'Scene Setting', 'Day/Night', 'Date', 'Time', 'Type', 'Shoot Location', 'Pages', 'Duration', 'Status', 'Cast', 'Equipment', 'Contact', 'Notes'];
+                dataForSheet.push(tableHeader);
+                results.forEach(result => {
+                    result.scenes.forEach(s => {
+                        dataForSheet.push([
+                            result.scheduleBreak, result.sequence.name, s.number, s.description, s.sceneSetting, s.dayNight, formatDateDDMMYYYY(s.date), s.time, s.type, s.shootLocation, s.pages, s.duration, s.status, s.cast, s.equipment, s.contact, s.notes
+                        ]);
+                    });
+                });
+                const worksheet = XLSX.utils.aoa_to_sheet(dataForSheet);
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Results");
+                XLSX.writeFile(workbook, `Filtered_Results_Schedule.xlsx`);
+                // ADDED: Success message
+                alert(`Successfully exported filtered results.`);
+            } else {
+                const activeSequence = projectData.panelItems.find(item => item.id === projectData.activeItemId);
+                if (!activeSequence) { alert("Please select a sequence to export."); return; }
+                const scenesToExport = getVisibleScenes();
+                if (scenesToExport.length === 0) { alert(`No scenes in "${activeSequence.name}" to export.`); return; }
+                
+                const worksheet = createSheet(activeSequence, scenesToExport);
+                XLSX.utils.book_append_sheet(workbook, worksheet, activeSequence.name.replace(/[/\\?*:[\]]/g, '').substring(0, 31));
+                XLSX.writeFile(workbook, `${activeSequence.name.replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.xlsx`);
+                // ADDED: Success message
+                alert(`Successfully exported the "${activeSequence.name}" sequence.`);
+            }
+        }
+    } catch (error) {
+        console.error("Excel Export Error:", error);
+        alert("An error occurred while creating the Excel file. Please check the console for details.");
+    }
+}
+
+// --- LOGIC FOR FULL PROJECT OR SINGLE SEQUENCE EXPORT ---
     const createSheet = (sequence, scenesToPrint) => {
         let scheduleBreakName = 'Uncategorized';
         const sequenceIndex = orderedPanelItems.findIndex(item => item.id === sequence.id);
