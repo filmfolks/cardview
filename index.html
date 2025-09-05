@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToshooT - Shooting Schedule</title>
+    <title>To Sched - Shooting Schedule App</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +39,7 @@
             </div>
         </div>
         <div class="header-center">
-            <h2 id="app-title">ToshooT</h2>
+            <h2 id="app-title">To SCHED</h2>
         </div>
         <div class="header-right">
             <button id="sequence-hamburger-btn" class="icon-btn"><i class="fas fa-layer-group"></i></button>
@@ -58,7 +58,7 @@
                     <textarea id="scene-description" rows="3" placeholder="Gandhi walks fast to prayer. Saket Ram watches, seeking forgiveness. Godse shoots Gandhi. Chaos. Saket breaks down in regret & guilt." required></textarea>
                     
                     <input type="text" id="scene-number" placeholder="Scene #" required>
-                    <input type="text" id="scene-setting" placeholder="Scene Setting (e.g., Ring Road)">
+                    <input type="text" id="scene-setting" placeholder="Scene Setting (HOUSE)">
                     <select id="day-night"><option value="DAY">DAY</option><option value="NIGHT">NIGHT</option></select>
                     
                     <div class="input-wrapper"><input type="date" id="scene-date" class="has-label" required><label for="scene-date">Date</label></div>
@@ -66,14 +66,14 @@
                     <select id="scene-type"><option value="INT">INT.</option><option value="EXT">EXT.</option><option value="INT/EXT">INT./EXT.</option></select>
                     
                     <input type="text" id="shoot-location" placeholder="Shoot Location" required>
-                    <input type="text" id="scene-pages" placeholder="Pages (e.g., 1 3/8)">
-                    <input type="text" id="scene-duration" placeholder="Duration (e.g., 2h 30m)">
+                    <input type="text" id="scene-pages" placeholder="Page No: (1 3/8)">
+                    <input type="text" id="scene-duration" placeholder="Duration of scene (2 min)">
                     <select id="scene-status"><option value="Pending">Pending</option><option value="NOT SHOT">NOT SHOT</option><option value="Done">Done</option></select>
-                    <input type="text" id="scene-cast" placeholder="Cast (e.g., John, Mary)">
-                    <input type="text" id="scene-equipment" placeholder="Key Equipment">
-                    <input type="tel" id="scene-contact" placeholder="Contact Person (e.g., AD)">
+                    <input type="text" id="scene-cast" placeholder="Cast or Crew (Kamal, Sridevi)">
+                    <input type="text" id="scene-equipment" placeholder="Equipments: Camera, Crane..etc.,">
+                    <input type="tel" id="scene-contact" placeholder="Contact (Mob, Address)">
                     
-                    <input type="text" id="scene-notes" placeholder="Notes (if any)">
+                    <input type="text" id="scene-notes" placeholder="Notes (if any to cast/crew)">
                 </div>
                 <button type="submit" class="btn-primary">Add Scene</button>
             </form>
@@ -85,10 +85,10 @@
     <div id="project-info-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" id="close-project-modal">&times;</span>
-            <h3>Project Information</h3>
+            <h3>Project Info</h3>
             <div class="modal-form">
-                <input type="text" id="prod-name" placeholder="Production / Studio Name"><input type="text" id="director-name" placeholder="Director Name">
-                <input type="tel" id="contact-number" placeholder="Contact Number"><input type="email" id="contact-email" placeholder="Email">
+                <input type="text" id="prod-name" placeholder="Production / Studio Name"><input type="text" id="director-name" placeholder="Director/First AD Name">
+                <input type="tel" id="contact-number" placeholder="Contact Number"><input type="email" id="contact-email" placeholder="Email or Website">
                 <button id="save-project-info-btn" class="btn-primary">Save Info</button>
             </div>
         </div>
