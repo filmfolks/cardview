@@ -49,6 +49,20 @@ function setupEventListeners() {
         }
     };
 
+    // NEW: Event listeners for the splash screen buttons
+    safeAddListener('start-new-project-btn', 'click', () => {
+        hideSplashScreen();
+        openProjectModal();
+    });
+
+    safeAddListener('open-project-link', 'click', (e) => {
+        e.preventDefault();
+        // We don't hide the splash screen here, because if the user cancels
+        // the file picker, we want them to stay on the splash screen.
+        // It will be hidden after a file is successfully loaded.
+        document.getElementById('file-input').click();
+    });
+
     safeAddListener('schedule-form', 'submit', handleAddScene);
 
     const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -92,6 +106,14 @@ function setupEventListeners() {
             dropdownMenu.classList.remove('show');
         }
     });
+}
+
+// =================================================================
+// --- SPLASH SCREEN LOGIC ---
+// =================================================================
+function hideSplashScreen() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-app-container').style.display = 'block';
 }
 
 // =================================================================
@@ -456,12 +478,20 @@ function deleteScene(id) {
 // =================================================================
 // --- DATA PERSISTENCE & PROJECT FILES ---
 // =================================================================
-function saveProjectData(isBackup = false) {
-    const key = isBackup ? 'projectData_backup' : 'projectData';
-    localStorage.setItem(key, JSON.stringify(projectData));
-}
+// MODIFIED: This function now decides whether to show the splash screen or the main app.
 function loadProjectData() {
     let savedData = localStorage.getItem('projectData');
+    
+    // NEW: Check if data exists
+    if (!savedData) {
+        // NO DATA: Show the splash screen
+        document.getElementById('splash-screen').style.display = 'flex';
+        return; // Stop here, don't load anything else
+    }
+
+    // DATA EXISTS: Hide splash and show the main app
+    hideSplashScreen();
+
     const backupData = localStorage.getItem('projectData_backup');
     if (!savedData && backupData) {
         if (confirm("No main save data found, but a backup exists. Would you like to restore the backup?")) {
@@ -485,34 +515,17 @@ function loadProjectData() {
     renderSchedule();
     renderSequencePanel();
 }
+
+// MODIFIED: When clearing a project, reload the app to show the splash screen again.
 function clearProject() {
     if (confirm('Are you sure you want to clear the entire project? This action cannot be undone.')) {
-        projectData = { panelItems: [], activeItemId: null, projectInfo: {} };
-        lastContactPerson = '';
-        saveProjectData();
-        renderSchedule();
-        renderSequencePanel();
+        localStorage.removeItem('projectData');
+        localStorage.removeItem('projectData_backup');
+        location.reload(); // Reload the page to show the splash screen
     }
 }
-function saveProjectFile() {
-     try {
-        const projectInfo = projectData.projectInfo || {};
-        const projectName = projectInfo.prodName || 'UntitledProject';
-        const dataStr = JSON.stringify(projectData, null, 2);
-        const dataBlob = new Blob([dataStr], {type: "application/json"});
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}.filmproj`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    } catch (error) {
-        console.error("Error saving project file:", error);
-        alert("Could not save project file. See console for details.");
-    }
-}
+
+// MODIFIED: When opening a file, hide the splash screen on success.
 function openProjectFile(event) {
     const file = event.target.files[0];
     if (!file) { return; }
@@ -521,18 +534,17 @@ function openProjectFile(event) {
         try {
             const data = JSON.parse(e.target.result);
             if (data && typeof data === 'object' && Array.isArray(data.panelItems) && data.hasOwnProperty('projectInfo')) {
-                if (confirm("This will replace your current project. Are you sure you want to proceed?")) {
-                    projectData = data;
-                    if (!projectData.projectInfo) projectData.projectInfo = {};
-                    if (!projectData.panelItems) projectData.panelItems = [];
-                    if (projectData.activeItemId === null && projectData.panelItems.length > 0) {
-                        const firstSequence = projectData.panelItems.find(i => i.type === 'sequence');
-                        if (firstSequence) projectData.activeItemId = firstSequence.id;
-                    }
-                    saveProjectData();
-                    loadProjectData();
-                    alert("Project loaded successfully.");
+                projectData = data;
+                if (!projectData.projectInfo) projectData.projectInfo = {};
+                if (!projectData.panelItems) projectData.panelItems = [];
+                if (projectData.activeItemId === null && projectData.panelItems.length > 0) {
+                    const firstSequence = projectData.panelItems.find(i => i.type === 'sequence');
+                    if (firstSequence) projectData.activeItemId = firstSequence.id;
                 }
+                saveProjectData();
+                hideSplashScreen(); // <-- Hide splash screen on success
+                loadProjectData(); // Reload the UI with the new data
+                alert("Project loaded successfully.");
             } else {
                 alert("Invalid project file format.");
             }
@@ -549,6 +561,7 @@ function openProjectFile(event) {
     };
     reader.readAsText(file);
 }
+
 
 // =================================================================
 // --- MODAL LOGIC ---
