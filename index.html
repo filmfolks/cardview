@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToshooT - Shooting Schedule</title>
+    <title>To Sched - Shooting Schedule</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
     <div class="splash-screen" id="splash-screen">
         <div class="splash-content">
             <i class="fas fa-clapperboard splash-icon"></i>
-            <h1 class="splash-title">ToshooT</h1>
+            <h1 class="splash-title">To Sched</h1>
             <p class="splash-tagline">Your film schedule, simplified.</p>
             <button class="start-new-project-btn" id="start-new-project-btn">
                 Create New Project
@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="header-center">
-                <h2 id="app-title">ToshooT</h2>
+                <h2 id="app-title">To Sched</h2>
             </div>
             <div class="header-right">
                 <button id="sequence-hamburger-btn" class="icon-btn"><i class="fas fa-layer-group"></i></button>
@@ -92,11 +92,92 @@
     </div>
 
     <div id="share-card-template"></div>
-    <div id="project-info-modal" class="modal"></div>
-    <div id="edit-scene-modal" class="modal"></div>
-    <div id="info-modal" class="modal"></div>
-    <div id="about-modal" class="modal"></div>
-    <div id="sequence-panel" class="side-panel"></div>
+
+    <div id="project-info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-project-modal">&times;</span>
+            <h3>Project Information</h3>
+            <div class="modal-form">
+                <input type="text" id="prod-name" placeholder="Production / Studio Name"><input type="text" id="director-name" placeholder="Director Name">
+                <input type="tel" id="contact-number" placeholder="Contact Number"><input type="email" id="contact-email" placeholder="Email">
+                <button id="save-project-info-btn" class="btn-primary">Save Info</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-scene-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-edit-modal">&times;</span>
+            <h3>Edit Scene</h3>
+            <input type="hidden" id="edit-scene-id">
+            <div class="form-grid">
+                <textarea id="edit-scene-description" rows="3" placeholder="Scene Description"></textarea>
+                <input type="text" id="edit-scene-number" placeholder="Scene #">
+                <input type="text" id="edit-scene-setting" placeholder="Scene Setting">
+                <select id="edit-day-night"><option value="DAY">DAY</option><option value="NIGHT">NIGHT</option></select>
+                <input type="date" id="edit-scene-date">
+                <input type="time" id="edit-scene-time">
+                <select id="edit-scene-type"><option value="INT">INT.</option><option value="EXT">EXT.</option><option value="INT/EXT">INT./EXT.</option></select>
+                <input type="text" id="edit-shoot-location" placeholder="Shoot Location">
+                <input type="text" id="edit-scene-pages" placeholder="Pages">
+                <input type="text" id="edit-scene-duration" placeholder="Duration">
+                <select id="edit-scene-status"><option value="Pending">Pending</option><option value="NOT SHOT">NOT SHOT</option><option value="Done">Done</option></select>
+                <input type="text" id="edit-scene-cast" placeholder="Cast">
+                <input type="text" id="edit-scene-equipment" placeholder="Key Equipment">
+                <input type="tel" id="edit-scene-contact" placeholder="Contact Person">
+                <input type="text" id="edit-scene-notes" placeholder="Notes (if any)">
+            </div>
+            <div class="modal-actions">
+                <button id="delete-scene-btn" class="btn-danger">Delete Scene</button>
+                <button id="save-changes-btn" class="btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="info-modal" class="modal">
+        <div class="modal-content small">
+            <span class="close-btn" id="close-info-modal">&times;</span>
+            <h3>Field & Button Guide</h3>
+            <div class="info-content">
+                 <p><strong>Scene #</strong>: The number of your scene (e.g., 1, 2A).</p>
+                <p><strong>Scene Description</strong>: A summary of the action in the scene.</p>
+                <p><strong>Status</strong>: Mark scenes as <strong>Pending</strong>, <strong>NOT SHOT</strong>, or <strong>Done</strong>.</p>
+                <p><strong>Contact Person</strong>: This name is remembered for the next scene you add.</p>
+                <p><strong>Edit Button (✎)</strong>: Click to open a pop-up and edit all details for that scene.</p>
+                <p><strong>Sequences (Right Menu)</strong>: Group scenes into sequences. All scenes are added to the currently active sequence.</p>
+            </div>
+        </div>
+    </div>
+    <div id="about-modal" class="modal">
+        <div class="modal-content small">
+            <span class="close-btn" id="close-about-modal">&times;</span>
+            <h3>About To Sched</h3>
+            <p class="about-text">Designed By Thosho Tech</p>
+        </div>
+    </div>
+    
+    <div id="sequence-panel" class="side-panel">
+        <div class="panel-header">
+            <h3>Sort Panel</h3>
+            <div class="panel-actions">
+                <select id="filter-by-select" class="panel-sort">
+                    <option value="all">Show All Scenes</option>
+                    <option value="date">Filter by Date</option>
+                    <option value="status">Filter by Status</option>
+                    <option value="cast">Filter by Cast</option>
+                    <option value="shootLocation">Filter by Shoot Location</option>
+                    <option value="dayNight">Filter by Day/Night</option>
+                    <option value="sceneSetting">Filter by Scene Setting</option>
+                    <option value="type">Filter by INT/EXT</option>
+                </select>
+                <button id="add-schedule-break-btn" class="icon-btn small" title="Add Schedule Break"><i class="fas fa-plus"></i></button>
+                <button id="export-panel-btn" class="icon-btn small" title="Export Visible Scenes"><i class="fas fa-download"></i></button>
+                <button id="close-panel-btn" class="icon-btn small">&times;</button>
+            </div>
+            <div id="filter-controls" style="margin-top: 10px; width: 100%;"></div>
+        </div>
+        <div id="sequence-list" class="panel-list"></div>
+    </div>
 
     <script src="script.js"></script>
 </body>
